@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "478171997531",
+    "project_id": "spendly-d2750",
+    "storage_bucket": "spendly-d2750.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:478171997531:android:35104b2f3ebdb5068e267e",
+        "android_client_info": {
+          "package_name": "com.spendly.expensetracker"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDZdENHetyyL4ycnnNE9L2uIHB8vYNADrY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
