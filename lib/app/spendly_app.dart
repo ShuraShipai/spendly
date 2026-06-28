@@ -20,8 +20,16 @@ class SpendlyApp extends StatelessWidget {
             theme: AppTheme.light,
             darkTheme: AppTheme.dark,
             themeMode: appState.themeMode,
-            initialRoute: AppRoutes.welcome,
+            initialRoute: AppRoutes.authGate,
             routes: AppRoutes.routes,
+            onGenerateRoute: AppRoutes.onGenerateRoute,
+            builder: (context, child) {
+              return GestureDetector(
+                behavior: HitTestBehavior.translucent,
+                onTap: () => FocusManager.instance.primaryFocus?.unfocus(),
+                child: child,
+              );
+            },
           );
         },
       ),

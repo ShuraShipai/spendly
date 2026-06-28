@@ -8,6 +8,7 @@ import '../theme/app_spacing.dart';
 class AppTextField extends StatelessWidget {
   const AppTextField({
     required this.label,
+    this.controller,
     this.hintText,
     this.initialValue,
     this.obscureText = false,
@@ -15,10 +16,15 @@ class AppTextField extends StatelessWidget {
     this.errorText,
     this.trailing,
     this.focused = false,
+    this.validator,
+    this.textInputAction,
+    this.onFieldSubmitted,
+    this.autofillHints,
     super.key,
   });
 
   final String label;
+  final TextEditingController? controller;
   final String? hintText;
   final String? initialValue;
   final bool obscureText;
@@ -26,10 +32,14 @@ class AppTextField extends StatelessWidget {
   final String? errorText;
   final Widget? trailing;
   final bool focused;
+  final FormFieldValidator<String>? validator;
+  final TextInputAction? textInputAction;
+  final ValueChanged<String>? onFieldSubmitted;
+  final Iterable<String>? autofillHints;
 
   @override
   Widget build(BuildContext context) {
-    final hasError = errorText != null;
+    final hasError = errorText != null && errorText!.isNotEmpty;
     final borderColor = hasError
         ? AppColors.dangerLine
         : focused
@@ -55,9 +65,14 @@ class AppTextField extends StatelessWidget {
             children: [
               Expanded(
                 child: TextFormField(
+                  controller: controller,
                   initialValue: initialValue,
                   obscureText: obscureText,
                   keyboardType: keyboardType,
+                  validator: validator,
+                  textInputAction: textInputAction,
+                  onFieldSubmitted: onFieldSubmitted,
+                  autofillHints: autofillHints,
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                     color: AppColors.ink,
                     fontWeight: FontWeight.w700,
@@ -81,7 +96,7 @@ class AppTextField extends StatelessWidget {
             ],
           ),
         ),
-        if (errorText != null) ...[
+        if (hasError) ...[
           const SizedBox(height: AppSpacing.xs),
           Text(
             errorText!,

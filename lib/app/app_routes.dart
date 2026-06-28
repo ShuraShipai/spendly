@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../features/auth/screens/auth_gate.dart';
 import '../features/auth/screens/forgot_password_screen.dart';
 import '../features/auth/screens/login_screen.dart';
 import '../features/auth/screens/reset_password_screen.dart';
@@ -9,7 +10,8 @@ import '../features/auth/screens/welcome_screen.dart';
 class AppRoutes {
   const AppRoutes._();
 
-  static const welcome = '/';
+  static const authGate = '/';
+  static const welcome = '/welcome';
   static const signUp = '/sign-up';
   static const login = '/login';
   static const forgotPassword = '/forgot-password';
@@ -17,11 +19,30 @@ class AppRoutes {
 
   static Map<String, WidgetBuilder> get routes {
     return {
+      authGate: (_) => const AuthGate(),
       welcome: (_) => const WelcomeScreen(),
       signUp: (_) => const SignUpScreen(),
       login: (_) => const LoginScreen(),
       forgotPassword: (_) => const ForgotPasswordScreen(),
       resetPassword: (_) => const ResetPasswordScreen(),
     };
+  }
+
+  static Route<dynamic>? onGenerateRoute(RouteSettings settings) {
+    final name = settings.name;
+    if (name == null) {
+      return null;
+    }
+
+    final uri = Uri.parse(name);
+    if (uri.path == resetPassword) {
+      return MaterialPageRoute<void>(
+        settings: settings,
+        builder: (_) =>
+            ResetPasswordScreen(resetCode: uri.queryParameters['oobCode']),
+      );
+    }
+
+    return null;
   }
 }
