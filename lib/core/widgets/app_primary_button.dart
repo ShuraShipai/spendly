@@ -8,35 +8,49 @@ class AppPrimaryButton extends StatelessWidget {
   const AppPrimaryButton({
     required this.label,
     required this.onPressed,
+    this.isLoading = false,
     super.key,
   });
 
   final String label;
   final VoidCallback? onPressed;
+  final bool isLoading;
 
   @override
   Widget build(BuildContext context) {
     return DecoratedBox(
       decoration: BoxDecoration(
-        color: onPressed == null ? AppColors.inkSubtle : AppColors.mint,
+        color: onPressed == null || isLoading
+            ? AppColors.inkSubtle
+            : AppColors.mint,
         borderRadius: BorderRadius.circular(AppRadii.lg),
-        boxShadow: onPressed == null ? null : AppShadows.mintButton,
+        boxShadow: onPressed == null || isLoading
+            ? null
+            : AppShadows.mintButton,
       ),
       child: Material(
         color: Colors.transparent,
         child: InkWell(
-          onTap: onPressed,
+          onTap: isLoading ? null : onPressed,
           borderRadius: BorderRadius.circular(AppRadii.lg),
           child: SizedBox(
             height: 56,
             width: double.infinity,
             child: Center(
-              child: Text(
-                label,
-                style: Theme.of(
-                  context,
-                ).textTheme.labelLarge?.copyWith(color: Colors.white),
-              ),
+              child: isLoading
+                  ? const SizedBox.square(
+                      dimension: 22,
+                      child: CircularProgressIndicator(
+                        color: Colors.white,
+                        strokeWidth: 2.5,
+                      ),
+                    )
+                  : Text(
+                      label,
+                      style: Theme.of(
+                        context,
+                      ).textTheme.labelLarge?.copyWith(color: Colors.white),
+                    ),
             ),
           ),
         ),

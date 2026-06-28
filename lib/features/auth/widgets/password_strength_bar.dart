@@ -3,46 +3,58 @@ import 'package:flutter/material.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_radii.dart';
 import '../../../core/theme/app_spacing.dart';
+import '../models/password_strength.dart';
 
 class PasswordStrengthBar extends StatelessWidget {
-  const PasswordStrengthBar({
-    required this.label,
-    required this.activeSegments,
-    this.warning = false,
-    super.key,
-  });
+  const PasswordStrengthBar({required this.controller, super.key});
 
-  final String label;
-  final int activeSegments;
-  final bool warning;
+  final TextEditingController controller;
 
   @override
   Widget build(BuildContext context) {
-    final activeColor = warning ? AppColors.warning : AppColors.mint;
-    final textColor = warning ? AppColors.warning : AppColors.mintDark;
+    return ValueListenableBuilder<TextEditingValue>(
+      valueListenable: controller,
+      builder: (context, value, child) {
+        final strength = PasswordStrengthEvaluator.evaluate(value.text);
+        final textColor = strength.level == PasswordStrengthLevel.strong
+            ? AppColors.mintDark
+            : strength.color;
 
-    return Row(
-      children: [
-        for (var index = 0; index < 4; index++) ...[
-          Expanded(
-            child: Container(
-              height: 6,
-              decoration: BoxDecoration(
-                color: index < activeSegments ? activeColor : AppColors.line,
-                borderRadius: BorderRadius.circular(AppRadii.sm),
+        return Row(
+          children: [
+            for (var index = 0; index < 4; index++) ...[
+              Expanded(
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 180),
+                  curve: Curves.easeOut,
+                  height: 6,
+                  decoration: BoxDecoration(
+                    color: index < strength.activeSegments
+                        ? strength.color
+                        : AppColors.line,
+                    borderRadius: BorderRadius.circular(AppRadii.sm),
+                  ),
+                ),
+              ),
+              if (index != 3) const SizedBox(width: AppSpacing.xs),
+            ],
+            const SizedBox(width: AppSpacing.sm),
+            SizedBox(
+              width: 54,
+              child: AnimatedSwitcher(
+                duration: const Duration(milliseconds: 180),
+                child: Text(
+                  strength.label,
+                  key: ValueKey(strength.label),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.labelMedium?.copyWith(color: textColor),
+                ),
               ),
             ),
-          ),
-          if (index != 3) const SizedBox(width: AppSpacing.xs),
-        ],
-        const SizedBox(width: AppSpacing.sm),
-        Text(
-          label,
-          style: Theme.of(
-            context,
-          ).textTheme.labelMedium?.copyWith(color: textColor),
-        ),
-      ],
+          ],
+        );
+      },
     );
   }
 }
