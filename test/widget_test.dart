@@ -108,5 +108,46 @@ void main() {
     expect(find.text('New expense'), findsOneWidget);
     expect(find.text('Save expense'), findsOneWidget);
     expect(find.text('CATEGORY'), findsOneWidget);
+    expect(find.text('Today'), findsOneWidget);
+    expect(find.text('UPI'), findsNothing);
+    expect(find.text('Cash'), findsNothing);
+  });
+
+  testWidgets('requires payment method and supports custom categories', (
+    WidgetTester tester,
+  ) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.light,
+        home: const Scaffold(body: AddExpenseFlowSheet()),
+      ),
+    );
+
+    await tester.tap(find.text('Next'));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Save expense'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Required'), findsOneWidget);
+    expect(find.text('New expense'), findsOneWidget);
+
+    await tester.tap(find.text('PAY VIA'));
+    await tester.pumpAndSettle();
+    expect(find.text('UPI'), findsOneWidget);
+    expect(find.text('Cash'), findsOneWidget);
+
+    await tester.tap(find.text('UPI'));
+    await tester.pumpAndSettle();
+    expect(find.text('UPI'), findsOneWidget);
+    expect(find.text('Required'), findsNothing);
+
+    await tester.tap(find.text('+ More'));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField).last, 'Coffee');
+    await tester.tap(find.widgetWithText(FilledButton, 'Save'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Coffee'), findsOneWidget);
   });
 }
