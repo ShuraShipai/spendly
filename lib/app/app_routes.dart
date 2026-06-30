@@ -6,6 +6,8 @@ import '../features/auth/screens/login_screen.dart';
 import '../features/auth/screens/reset_password_screen.dart';
 import '../features/auth/screens/sign_up_screen.dart';
 import '../features/auth/screens/welcome_screen.dart';
+import '../features/home/screens/main_navigation_screen.dart';
+import '../features/settings/screens/settings_screen.dart';
 
 class AppRoutes {
   const AppRoutes._();
@@ -16,6 +18,8 @@ class AppRoutes {
   static const login = '/login';
   static const forgotPassword = '/forgot-password';
   static const resetPassword = '/reset-password';
+  static const home = '/home';
+  static const settings = '/settings';
 
   static Map<String, WidgetBuilder> get routes {
     return {
@@ -25,6 +29,8 @@ class AppRoutes {
       login: (_) => const LoginScreen(),
       forgotPassword: (_) => const ForgotPasswordScreen(),
       resetPassword: (_) => const ResetPasswordScreen(),
+      home: (_) => const MainNavigationScreen(),
+      settings: (_) => const SettingsScreen(),
     };
   }
 
