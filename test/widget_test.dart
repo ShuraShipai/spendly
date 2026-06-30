@@ -6,6 +6,8 @@ import 'package:spendly/features/auth/constants/auth_constants.dart';
 import 'package:spendly/features/auth/constants/auth_validators.dart';
 import 'package:spendly/features/auth/models/password_strength.dart';
 import 'package:spendly/features/auth/screens/welcome_screen.dart';
+import 'package:spendly/features/expenses/widgets/add_expense_flow_sheet.dart';
+import 'package:spendly/features/home/widgets/email_verification_banner.dart';
 
 void main() {
   test('validates auth form values', () {
@@ -61,5 +63,50 @@ void main() {
     expect(find.text('Money, made\nfriendly.'), findsOneWidget);
     expect(find.text('Get started'), findsOneWidget);
     expect(find.text('I already have an account'), findsOneWidget);
+  });
+
+  testWidgets('renders the email verification banner', (
+    WidgetTester tester,
+  ) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.light,
+        home: Scaffold(
+          body: EmailVerificationBanner(
+            email: 'aanya@email.com',
+            isLoading: false,
+            onResend: () {},
+            onDismiss: () {},
+          ),
+        ),
+      ),
+    );
+
+    expect(find.text('Verify your email'), findsOneWidget);
+    expect(find.textContaining('aanya@email.com'), findsOneWidget);
+    expect(find.text('Resend email'), findsOneWidget);
+    expect(find.text('Dismiss'), findsOneWidget);
+  });
+
+  testWidgets('moves from amount keypad to expense details', (
+    WidgetTester tester,
+  ) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.light,
+        home: const Scaffold(body: AddExpenseFlowSheet()),
+      ),
+    );
+
+    expect(find.text('How much?'), findsOneWidget);
+    expect(find.text('FOOD'), findsOneWidget);
+    expect(find.text('Next'), findsOneWidget);
+
+    await tester.tap(find.text('Next'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('New expense'), findsOneWidget);
+    expect(find.text('Save expense'), findsOneWidget);
+    expect(find.text('CATEGORY'), findsOneWidget);
   });
 }
