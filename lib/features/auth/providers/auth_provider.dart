@@ -31,11 +31,13 @@ class AuthProvider extends ChangeNotifier {
   AppUser? _user;
   String? _errorMessage;
   bool _isLoading = false;
+  bool _isEmailVerified = true;
 
   AuthStatus get status => _status;
   AppUser? get user => _user;
   String? get errorMessage => _errorMessage;
   bool get isLoading => _isLoading;
+  bool get isEmailVerified => _isEmailVerified;
 
   Future<void> signUp({
     required String email,
@@ -61,7 +63,9 @@ class AuthProvider extends ChangeNotifier {
             : displayName?.trim(),
       );
       await _userFirestoreService.createUser(appUser);
+      await _authService.sendEmailVerification();
       _user = appUser;
+      _isEmailVerified = firebaseUser.emailVerified;
       _status = AuthStatus.authenticated;
     });
   }
@@ -84,6 +88,7 @@ class AuthProvider extends ChangeNotifier {
             email: firebaseUser.email ?? email.trim(),
             displayName: firebaseUser.displayName,
           );
+      _isEmailVerified = firebaseUser.emailVerified;
       _status = AuthStatus.authenticated;
     });
   }
@@ -92,6 +97,10 @@ class AuthProvider extends ChangeNotifier {
     await _runAuthTask(() {
       return _authService.sendPasswordResetEmail(email.trim());
     });
+  }
+
+  Future<void> sendEmailVerification() async {
+    await _runAuthTask(_authService.sendEmailVerification);
   }
 
   Future<void> resetPassword({
@@ -121,6 +130,7 @@ class AuthProvider extends ChangeNotifier {
   Future<void> _setFirebaseUser(firebase_auth.User? firebaseUser) async {
     if (firebaseUser == null) {
       _user = null;
+      _isEmailVerified = true;
       _status = AuthStatus.unauthenticated;
       notifyListeners();
       return;
@@ -133,6 +143,7 @@ class AuthProvider extends ChangeNotifier {
           email: firebaseUser.email ?? '',
           displayName: firebaseUser.displayName,
         );
+    _isEmailVerified = firebaseUser.emailVerified;
     _status = AuthStatus.authenticated;
     notifyListeners();
   }

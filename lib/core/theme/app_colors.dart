@@ -23,6 +23,16 @@ class AppColors {
   static const warning = Color(0xFFE0A92E);
   static const warningSurface = Color(0xFFFFF4DC);
 
+  static const food = Color(0xFFFF9E8A);
+  static const groceries = Color(0xFF8FD884);
+  static const transport = Color(0xFF84C5F4);
+  static const shopping = Color(0xFFF79FC4);
+  static const bills = Color(0xFFFFC36B);
+  static const rent = Color(0xFFB0A4F5);
+  static const health = Color(0xFFFF8FA8);
+  static const entertainment = Color(0xFFC58DEA);
+  static const travel = Color(0xFF5FCFD6);
+
   static const coin = Color(0xFFFFD56B);
   static const coinBorder = Color(0xFFF2BE45);
   static const coinInk = Color(0xFF3A2E1E);

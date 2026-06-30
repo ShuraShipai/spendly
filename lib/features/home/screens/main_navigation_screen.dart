@@ -2,7 +2,10 @@ import 'package:flutter/material.dart';
 
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
+import '../../expenses/widgets/add_expense_flow_sheet.dart';
 import '../../settings/screens/settings_screen.dart';
+import '../widgets/navigation_icon_button.dart';
+import '../widgets/placeholder_tab.dart';
 import 'home_screen.dart';
 
 class MainNavigationScreen extends StatefulWidget {
@@ -17,12 +20,12 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
 
   static const _screens = [
     HomeScreen(),
-    _PlaceholderTab(
+    PlaceholderTab(
       title: 'Transactions',
       subtitle: 'Your expenses will appear here.',
       icon: Icons.list_alt_rounded,
     ),
-    _PlaceholderTab(
+    PlaceholderTab(
       title: 'Reports',
       subtitle: 'Charts and spending trends will appear here.',
       icon: Icons.trending_up_rounded,
@@ -37,6 +40,19 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     setState(() => _selectedIndex = index);
   }
 
+  void _showAddExpenseFlow() {
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(34)),
+      ),
+      builder: (_) => const AddExpenseFlowSheet(),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -48,9 +64,10 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
       floatingActionButton: SizedBox.square(
         dimension: 58,
         child: FloatingActionButton(
-          onPressed: () {},
           elevation: 0,
           backgroundColor: AppColors.mint,
+          heroTag: 'add-expense',
+          onPressed: _showAddExpenseFlow,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(20),
           ),
@@ -73,28 +90,28 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceAround,
                 children: [
-                  _NavIconButton(
+                  NavigationIconButton(
                     icon: Icons.home_outlined,
                     selectedIcon: Icons.home_rounded,
                     label: 'Home',
                     selected: _selectedIndex == 0,
                     onPressed: () => _selectTab(0),
                   ),
-                  _NavIconButton(
+                  NavigationIconButton(
                     icon: Icons.list_alt_outlined,
                     selectedIcon: Icons.list_alt_rounded,
                     label: 'Transactions',
                     selected: _selectedIndex == 1,
                     onPressed: () => _selectTab(1),
                   ),
-                  _NavIconButton(
+                  NavigationIconButton(
                     icon: Icons.trending_up_outlined,
                     selectedIcon: Icons.trending_up_rounded,
                     label: 'Reports',
                     selected: _selectedIndex == 2,
                     onPressed: () => _selectTab(2),
                   ),
-                  _NavIconButton(
+                  NavigationIconButton(
                     icon: Icons.person_outline_rounded,
                     selectedIcon: Icons.person_rounded,
                     label: 'Settings',
@@ -105,88 +122,6 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
               ),
             ),
           ),
-        ),
-      ),
-    );
-  }
-}
-
-class _NavIconButton extends StatelessWidget {
-  const _NavIconButton({
-    required this.icon,
-    required this.selectedIcon,
-    required this.label,
-    required this.selected,
-    required this.onPressed,
-  });
-
-  final IconData icon;
-  final IconData selectedIcon;
-  final String label;
-  final bool selected;
-  final VoidCallback onPressed;
-
-  @override
-  Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final inactiveColor = isDark ? AppColors.darkInkMuted : AppColors.inkSubtle;
-
-    return IconButton(
-      tooltip: label,
-      onPressed: onPressed,
-      icon: Icon(selected ? selectedIcon : icon),
-      color: selected ? AppColors.mint : inactiveColor,
-      iconSize: 24,
-      style: IconButton.styleFrom(
-        fixedSize: const Size(54, 54),
-        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-      ),
-    );
-  }
-}
-
-class _PlaceholderTab extends StatelessWidget {
-  const _PlaceholderTab({
-    required this.title,
-    required this.subtitle,
-    required this.icon,
-  });
-
-  final String title;
-  final String subtitle;
-  final IconData icon;
-
-  @override
-  Widget build(BuildContext context) {
-    return SafeArea(
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(
-          AppSpacing.screenHorizontal,
-          AppSpacing.lg,
-          AppSpacing.screenHorizontal,
-          AppSpacing.xxl,
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(title, style: Theme.of(context).textTheme.headlineSmall),
-            const Spacer(),
-            Center(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(icon, color: AppColors.mint, size: 54),
-                  const SizedBox(height: AppSpacing.md),
-                  Text(
-                    subtitle,
-                    style: Theme.of(context).textTheme.bodyMedium,
-                    textAlign: TextAlign.center,
-                  ),
-                ],
-              ),
-            ),
-            const Spacer(),
-          ],
         ),
       ),
     );
