@@ -3,9 +3,17 @@ import 'package:flutter/material.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_radii.dart';
 import '../../../core/theme/app_spacing.dart';
+import '../models/dashboard_period.dart';
 
 class PeriodSelector extends StatelessWidget {
-  const PeriodSelector({super.key});
+  const PeriodSelector({
+    required this.selectedPeriod,
+    required this.onPeriodSelected,
+    super.key,
+  });
+
+  final DashboardPeriod selectedPeriod;
+  final ValueChanged<DashboardPeriod> onPeriodSelected;
 
   @override
   Widget build(BuildContext context) {
@@ -21,14 +29,17 @@ class PeriodSelector extends StatelessWidget {
           borderRadius: BorderRadius.circular(AppRadii.md),
           border: Border.all(color: borderColor.withValues(alpha: 0.28)),
         ),
-        child: const Padding(
-          padding: EdgeInsets.all(AppSpacing.xxs),
+        child: Padding(
+          padding: const EdgeInsets.all(AppSpacing.xxs),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              _PeriodChip(label: 'Today'),
-              _PeriodChip(label: 'Week', selected: true),
-              _PeriodChip(label: 'Month'),
+              for (final period in DashboardPeriod.values)
+                _PeriodChip(
+                  label: period.label,
+                  selected: period == selectedPeriod,
+                  onTap: () => onPeriodSelected(period),
+                ),
             ],
           ),
         ),
@@ -38,27 +49,36 @@ class PeriodSelector extends StatelessWidget {
 }
 
 class _PeriodChip extends StatelessWidget {
-  const _PeriodChip({required this.label, this.selected = false});
+  const _PeriodChip({
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
 
   final String label;
   final bool selected;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: selected ? AppColors.mint : Colors.transparent,
-        borderRadius: BorderRadius.circular(10),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(
-          horizontal: AppSpacing.md,
-          vertical: AppSpacing.xs,
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(10),
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          color: selected ? AppColors.mint : Colors.transparent,
+          borderRadius: BorderRadius.circular(10),
         ),
-        child: Text(
-          label,
-          style: Theme.of(context).textTheme.labelMedium?.copyWith(
-            color: selected ? Colors.white : AppColors.inkSubtle,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.md,
+            vertical: AppSpacing.xs,
+          ),
+          child: Text(
+            label,
+            style: Theme.of(context).textTheme.labelMedium?.copyWith(
+              color: selected ? Colors.white : AppColors.inkSubtle,
+            ),
           ),
         ),
       ),

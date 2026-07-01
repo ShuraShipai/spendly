@@ -24,6 +24,12 @@ void main() {
       expect(ExpenseCategory.food.isCustom, isFalse);
     });
 
+    test('compares category names case-insensitively after trimming', () {
+      expect(ExpenseCategory.food.hasSameLabel(' food '), isTrue);
+      expect(ExpenseCategory.food.hasSameLabel('FOOD'), isTrue);
+      expect(ExpenseCategory.food.hasSameLabel('Bills'), isFalse);
+    });
+
     test('serializes and deserializes custom categories', () {
       final category = ExpenseCategory.custom(
         label: 'Team lunch',
