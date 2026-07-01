@@ -2,6 +2,8 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'package:spendly/core/theme/app_colors.dart';
 import 'package:spendly/features/expenses/models/expense_category.dart';
+import 'package:spendly/features/expenses/models/expense_entry.dart';
+import 'package:spendly/features/expenses/models/payment_method.dart';
 import 'package:spendly/features/expenses/services/custom_category_service.dart';
 
 void main() {
@@ -68,6 +70,30 @@ void main() {
       final loaded = await service.loadCustomCategories(userId);
       expect(loaded, hasLength(1));
       expect(loaded.single.color, AppColors.health);
+    });
+  });
+
+  group('ExpenseEntry', () {
+    test('uses note as subtitle and category as fallback', () {
+      final expenseWithNote = ExpenseEntry(
+        id: 'expense-1',
+        amount: 1200,
+        category: ExpenseCategory.bills,
+        date: DateTime(2026, 7),
+        paymentMethod: PaymentMethod.upi,
+        note: 'Electricity bill',
+      );
+      final expenseWithoutNote = ExpenseEntry(
+        id: 'expense-2',
+        amount: 300,
+        category: ExpenseCategory.food,
+        date: DateTime(2026, 7),
+        paymentMethod: PaymentMethod.cash,
+      );
+
+      expect(expenseWithNote.title, 'Bills expense');
+      expect(expenseWithNote.subtitle, 'Electricity bill');
+      expect(expenseWithoutNote.subtitle, 'Food');
     });
   });
 }

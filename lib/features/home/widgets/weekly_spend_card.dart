@@ -4,7 +4,9 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
 
 class WeeklySpendCard extends StatelessWidget {
-  const WeeklySpendCard({super.key});
+  const WeeklySpendCard({required this.totalSpent, super.key});
+
+  final double totalSpent;
 
   @override
   Widget build(BuildContext context) {
@@ -34,10 +36,15 @@ class WeeklySpendCard extends StatelessWidget {
               ).textTheme.labelMedium?.copyWith(color: AppColors.inkSubtle),
             ),
             const SizedBox(height: AppSpacing.xs),
-            Text('₹0', style: Theme.of(context).textTheme.displaySmall),
+            Text(
+              _formatAmount(totalSpent),
+              style: Theme.of(context).textTheme.displaySmall,
+            ),
             const SizedBox(height: AppSpacing.xs),
             Text(
-              'Add expenses to see your total grow',
+              totalSpent == 0
+                  ? 'Add expenses to see your total grow'
+                  : 'Nice. Your dashboard is live.',
               style: Theme.of(context).textTheme.bodySmall,
               textAlign: TextAlign.center,
             ),
@@ -45,5 +52,12 @@ class WeeklySpendCard extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  String _formatAmount(double amount) {
+    if (amount == amount.roundToDouble()) {
+      return '₹${amount.round()}';
+    }
+    return '₹${amount.toStringAsFixed(2)}';
   }
 }

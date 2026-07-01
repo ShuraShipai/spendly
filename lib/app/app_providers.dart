@@ -6,6 +6,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import '../features/auth/providers/auth_provider.dart';
 import '../features/auth/services/auth_service.dart';
 import '../features/auth/services/user_firestore_service.dart';
+import '../features/expenses/providers/expense_provider.dart';
 import '../features/expenses/services/custom_category_service.dart';
 import 'providers/app_state_provider.dart';
 
@@ -19,6 +20,7 @@ class AppProviders extends StatelessWidget {
     return MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => AppStateProvider()),
+        ChangeNotifierProvider(create: (_) => ExpenseProvider()),
         Provider(create: (_) => AuthService()),
         Provider(create: (_) => UserFirestoreService()),
         Provider(

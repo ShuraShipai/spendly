@@ -20,6 +20,7 @@ class ExpenseDetailsStep extends StatelessWidget {
     required this.category,
     required this.categories,
     required this.selectedDate,
+    required this.note,
     required this.paymentMethod,
     required this.showPaymentError,
     required this.onClose,
@@ -27,6 +28,7 @@ class ExpenseDetailsStep extends StatelessWidget {
     required this.onCategoryChanged,
     required this.onAddCategory,
     required this.onDatePressed,
+    required this.onNoteChanged,
     required this.onPaymentMethodChanged,
     required this.onSave,
     super.key,
@@ -36,6 +38,7 @@ class ExpenseDetailsStep extends StatelessWidget {
   final ExpenseCategory category;
   final List<ExpenseCategory> categories;
   final DateTime selectedDate;
+  final String note;
   final PaymentMethod? paymentMethod;
   final bool showPaymentError;
   final VoidCallback onClose;
@@ -43,11 +46,17 @@ class ExpenseDetailsStep extends StatelessWidget {
   final ValueChanged<ExpenseCategory> onCategoryChanged;
   final VoidCallback onAddCategory;
   final VoidCallback onDatePressed;
+  final ValueChanged<String> onNoteChanged;
   final ValueChanged<PaymentMethod> onPaymentMethodChanged;
   final VoidCallback onSave;
 
   @override
   Widget build(BuildContext context) {
+    final visibleCategories = [
+      ...categories,
+      if (!categories.contains(category)) category,
+    ];
+
     return ExpenseSheetFrame(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -66,7 +75,7 @@ class ExpenseDetailsStep extends StatelessWidget {
             spacing: AppSpacing.xs,
             runSpacing: AppSpacing.xs,
             children: [
-              for (final option in categories)
+              for (final option in visibleCategories)
                 ExpenseCategoryChip(
                   category: option,
                   selected: option == category,
@@ -111,7 +120,7 @@ class ExpenseDetailsStep extends StatelessWidget {
             ],
           ),
           const SizedBox(height: AppSpacing.md),
-          const ExpenseNoteField(),
+          ExpenseNoteField(note: note, onChanged: onNoteChanged),
           const Spacer(),
           MintActionButton(label: 'Save expense', onPressed: onSave),
         ],

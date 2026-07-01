@@ -13,6 +13,7 @@ class AmountKeypadStep extends StatelessWidget {
     required this.amount,
     required this.onClose,
     required this.onKeyPressed,
+    required this.onPresetAmountPressed,
     required this.onBackspace,
     required this.onNext,
     super.key,
@@ -21,6 +22,7 @@ class AmountKeypadStep extends StatelessWidget {
   final String amount;
   final VoidCallback onClose;
   final ValueChanged<String> onKeyPressed;
+  final ValueChanged<int> onPresetAmountPressed;
   final VoidCallback onBackspace;
   final VoidCallback onNext;
 
@@ -64,17 +66,17 @@ class AmountKeypadStep extends StatelessWidget {
                   children: [
                     AmountShortcut(
                       label: '+₹50',
-                      onTap: () => onKeyPressed('50'),
+                      onTap: () => onPresetAmountPressed(50),
                     ),
                     const SizedBox(width: AppSpacing.xs),
                     AmountShortcut(
                       label: '+₹100',
-                      onTap: () => onKeyPressed('100'),
+                      onTap: () => onPresetAmountPressed(100),
                     ),
                     const SizedBox(width: AppSpacing.xs),
                     AmountShortcut(
                       label: '+₹500',
-                      onTap: () => onKeyPressed('500'),
+                      onTap: () => onPresetAmountPressed(500),
                     ),
                   ],
                 ),
