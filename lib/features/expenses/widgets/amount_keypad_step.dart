@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
-import '../models/expense_category.dart';
 import 'amount_shortcut.dart';
 import 'expense_sheet_frame.dart';
 import 'expense_sheet_header.dart';
@@ -12,7 +11,6 @@ import 'number_pad.dart';
 class AmountKeypadStep extends StatelessWidget {
   const AmountKeypadStep({
     required this.amount,
-    required this.category,
     required this.onClose,
     required this.onKeyPressed,
     required this.onBackspace,
@@ -21,7 +19,6 @@ class AmountKeypadStep extends StatelessWidget {
   });
 
   final String amount;
-  final ExpenseCategory category;
   final VoidCallback onClose;
   final ValueChanged<String> onKeyPressed;
   final VoidCallback onBackspace;
@@ -42,7 +39,7 @@ class AmountKeypadStep extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Text(
-                  category.label.toUpperCase(),
+                  'AMOUNT',
                   style: Theme.of(
                     context,
                   ).textTheme.labelMedium?.copyWith(color: AppColors.inkSubtle),

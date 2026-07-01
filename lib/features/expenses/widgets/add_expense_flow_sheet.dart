@@ -1,13 +1,19 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 import '../../../core/theme/app_colors.dart';
+import '../../auth/providers/auth_provider.dart';
 import '../models/expense_category.dart';
 import '../models/payment_method.dart';
+import '../services/custom_category_service.dart';
 import 'amount_keypad_step.dart';
 import 'expense_details_step.dart';
 
 class AddExpenseFlowSheet extends StatefulWidget {
-  const AddExpenseFlowSheet({super.key});
+  const AddExpenseFlowSheet({super.key, this.userId});
+
+  /// Optional override for tests when [AuthProvider] is not available.
+  final String? userId;
 
   @override
   State<AddExpenseFlowSheet> createState() => _AddExpenseFlowSheetState();
@@ -21,6 +27,70 @@ class _AddExpenseFlowSheetState extends State<AddExpenseFlowSheet> {
   var _selectedDate = DateTime.now();
   PaymentMethod? _paymentMethod;
   var _showPaymentError = false;
+  var _loadedCustomCategories = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_loadedCustomCategories) {
+      return;
+    }
+    _loadedCustomCategories = true;
+    _loadCustomCategories();
+  }
+
+  String? get _userId {
+    if (widget.userId != null) {
+      return widget.userId;
+    }
+
+    try {
+      return context.read<AuthProvider>().user?.uid;
+    } on ProviderNotFoundException {
+      return null;
+    }
+  }
+
+  CustomCategoryService? get _categoryService {
+    try {
+      return context.read<CustomCategoryService>();
+    } on ProviderNotFoundException {
+      return null;
+    }
+  }
+
+  Future<void> _loadCustomCategories() async {
+    final userId = _userId;
+    final service = _categoryService;
+    if (userId == null || service == null) {
+      return;
+    }
+
+    final customCategories = await service.loadCustomCategories(userId);
+    if (!mounted) {
+      return;
+    }
+
+    setState(() {
+      _categories = _mergeCategories(customCategories);
+      if (_categories.contains(_category)) {
+        return;
+      }
+      _category = ExpenseCategory.food;
+    });
+  }
+
+  List<ExpenseCategory> _mergeCategories(
+    Iterable<ExpenseCategory> customCategories,
+  ) {
+    final merged = [...ExpenseCategory.defaults];
+    for (final category in customCategories) {
+      if (!merged.any((existing) => existing.id == category.id)) {
+        merged.add(category);
+      }
+    }
+    return merged;
+  }
 
   void _appendAmount(String value) {
     setState(() {
@@ -55,19 +125,28 @@ class _AddExpenseFlowSheetState extends State<AddExpenseFlowSheet> {
       return;
     }
 
+    final existingIndex = _categories.indexWhere(
+      (existing) => existing.id == category.id,
+    );
+
     setState(() {
+      if (existingIndex >= 0) {
+        _category = _categories[existingIndex];
+        return;
+      }
       _categories = [..._categories, category];
       _category = category;
     });
   }
 
   Future<void> _pickDate() async {
-    final now = DateTime.now();
+    final today = DateUtils.dateOnly(DateTime.now());
+    final initialDate = _selectedDate.isAfter(today) ? today : _selectedDate;
     final pickedDate = await showDatePicker(
       context: context,
-      initialDate: _selectedDate,
-      firstDate: DateTime(now.year - 5),
-      lastDate: DateTime(now.year + 1),
+      initialDate: initialDate,
+      firstDate: DateTime(2000),
+      lastDate: today,
     );
 
     if (pickedDate == null) {
@@ -77,9 +156,19 @@ class _AddExpenseFlowSheetState extends State<AddExpenseFlowSheet> {
     setState(() => _selectedDate = pickedDate);
   }
 
-  void _saveExpense() {
+  Future<void> _saveExpense() async {
     if (_paymentMethod == null) {
       setState(() => _showPaymentError = true);
+      return;
+    }
+
+    final userId = _userId;
+    final service = _categoryService;
+    if (userId != null && service != null && _category.isCustom) {
+      await service.saveCustomCategory(userId, _category);
+    }
+
+    if (!mounted) {
       return;
     }
 
@@ -99,7 +188,6 @@ class _AddExpenseFlowSheetState extends State<AddExpenseFlowSheet> {
           ? AmountKeypadStep(
               key: const ValueKey('amount'),
               amount: _amount,
-              category: _category,
               onClose: () => Navigator.of(context).pop(),
               onKeyPressed: _appendAmount,
               onBackspace: _backspaceAmount,

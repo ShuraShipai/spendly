@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:provider/provider.dart';
 
 import 'package:spendly/app/app_theme.dart';
 import 'package:spendly/features/auth/constants/auth_constants.dart';
 import 'package:spendly/features/auth/constants/auth_validators.dart';
 import 'package:spendly/features/auth/models/password_strength.dart';
 import 'package:spendly/features/auth/screens/welcome_screen.dart';
+import 'package:spendly/features/expenses/services/custom_category_service.dart';
 import 'package:spendly/features/expenses/widgets/add_expense_flow_sheet.dart';
 import 'package:spendly/features/home/widgets/email_verification_banner.dart';
 
@@ -99,7 +101,7 @@ void main() {
     );
 
     expect(find.text('How much?'), findsOneWidget);
-    expect(find.text('FOOD'), findsOneWidget);
+    expect(find.text('AMOUNT'), findsOneWidget);
     expect(find.text('Next'), findsOneWidget);
 
     await tester.tap(find.text('Next'));
@@ -146,6 +148,55 @@ void main() {
     await tester.pumpAndSettle();
     await tester.enterText(find.byType(TextField).last, 'Coffee');
     await tester.tap(find.widgetWithText(FilledButton, 'Save'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Coffee'), findsOneWidget);
+  });
+
+  testWidgets('persists custom categories after the first saved expense', (
+    WidgetTester tester,
+  ) async {
+    const userId = 'test-user';
+    final categoryService = CustomCategoryService();
+
+    Future<void> pumpSheet() {
+      return tester.pumpWidget(
+        MaterialApp(
+          theme: AppTheme.light,
+          home: Provider(
+            create: (_) => categoryService,
+            child: const Scaffold(body: AddExpenseFlowSheet(userId: userId)),
+          ),
+        ),
+      );
+    }
+
+    await pumpSheet();
+    await tester.tap(find.text('Next'));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('PAY VIA'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('UPI'));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('+ More'));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField).last, 'Coffee');
+    await tester.tap(find.widgetWithText(FilledButton, 'Save'));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Save expense'));
+    await tester.pumpAndSettle();
+
+    final savedCategories = await categoryService.loadCustomCategories(userId);
+    expect(savedCategories, hasLength(1));
+    expect(savedCategories.single.label, 'Coffee');
+
+    await tester.pumpWidget(const SizedBox.shrink());
+    await pumpSheet();
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Next'));
     await tester.pumpAndSettle();
 
     expect(find.text('Coffee'), findsOneWidget);
