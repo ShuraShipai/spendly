@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../expenses/screens/expense_list_screen.dart';
 import '../../expenses/widgets/add_expense_flow_sheet.dart';
 import '../../settings/screens/settings_screen.dart';
 import '../models/bottom_nav_metrics.dart';
@@ -20,11 +21,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
 
   static const _screens = [
     HomeScreen(),
-    PlaceholderTab(
-      title: 'Transactions',
-      subtitle: 'Your expenses will appear here.',
-      icon: Icons.list_alt_rounded,
-    ),
+    ExpenseListScreen(),
     PlaceholderTab(
       title: 'Reports',
       subtitle: 'Charts and spending trends will appear here.',

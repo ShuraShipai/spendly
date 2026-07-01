@@ -1,6 +1,8 @@
 import 'expense_category.dart';
 import 'payment_method.dart';
 
+const _unchanged = Object();
+
 class ExpenseEntry {
   const ExpenseEntry({
     required this.id,
@@ -18,7 +20,33 @@ class ExpenseEntry {
   final PaymentMethod paymentMethod;
   final String? note;
 
+  ExpenseEntry copyWith({
+    double? amount,
+    ExpenseCategory? category,
+    DateTime? date,
+    PaymentMethod? paymentMethod,
+    Object? note = _unchanged,
+  }) {
+    return ExpenseEntry(
+      id: id,
+      amount: amount ?? this.amount,
+      category: category ?? this.category,
+      date: date ?? this.date,
+      paymentMethod: paymentMethod ?? this.paymentMethod,
+      note: note == _unchanged ? this.note : note as String?,
+    );
+  }
+
   String get title => '${category.label} expense';
+
+  String get displayTitle {
+    final trimmedNote = note?.trim();
+    if (trimmedNote != null && trimmedNote.isNotEmpty) {
+      return trimmedNote;
+    }
+
+    return title;
+  }
 
   String get subtitle {
     final trimmedNote = note?.trim();

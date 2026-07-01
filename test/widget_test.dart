@@ -135,6 +135,28 @@ void main() {
         .widgetList<RichText>(find.byType(RichText))
         .map((richText) => richText.text.toPlainText());
     expect(richTextValues, contains('₹1000'));
+
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.light,
+        home: const Scaffold(body: AddExpenseFlowSheet()),
+      ),
+    );
+
+    await tester.tap(find.text('+₹100'));
+    await tester.pump();
+    await tester.tap(find.text('+₹100'));
+    await tester.pump();
+    await tester.tap(find.text('+₹100'));
+    await tester.pump();
+    await tester.tap(find.text('5'));
+    await tester.pump();
+
+    final updatedRichTextValues = tester
+        .widgetList<RichText>(find.byType(RichText))
+        .map((richText) => richText.text.toPlainText());
+    expect(updatedRichTextValues, contains('₹305'));
   });
 
   testWidgets('requires payment method and supports custom categories', (
@@ -205,6 +227,7 @@ void main() {
   ) async {
     const userId = 'test-user';
     final categoryService = CustomCategoryService();
+    final expenseProvider = ExpenseProvider();
 
     Future<void> pumpSheet() {
       return tester.pumpWidget(
@@ -213,7 +236,7 @@ void main() {
           home: MultiProvider(
             providers: [
               Provider(create: (_) => categoryService),
-              ChangeNotifierProvider(create: (_) => ExpenseProvider()),
+              ChangeNotifierProvider.value(value: expenseProvider),
             ],
             child: const Scaffold(body: AddExpenseFlowSheet(userId: userId)),
           ),
@@ -241,9 +264,11 @@ void main() {
     await tester.pumpAndSettle();
 
     await tester.tap(find.text('Save expense'));
+    await tester.tap(find.text('Save expense'));
     await tester.pumpAndSettle();
 
     expect(find.text('Nice one!'), findsOneWidget);
+    expect(expenseProvider.expenses, hasLength(1));
 
     final savedCategories = await categoryService.loadCustomCategories(userId);
     expect(savedCategories, hasLength(1));
@@ -259,8 +284,18 @@ void main() {
     await tester.enterText(find.byType(TextField).last, 'Coffee');
     await tester.pumpAndSettle();
 
+    await tester.tap(find.text('+ Add Category'));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField).last, ' coffee ');
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Save'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Category already exists.'), findsOneWidget);
+    expect(await categoryService.loadCustomCategories(userId), hasLength(1));
+
     expect(
-      find.descendant(of: find.byType(GridView), matching: find.text('Coffee')),
+      find.descendant(of: find.byType(ListView), matching: find.text('Coffee')),
       findsOneWidget,
     );
   });

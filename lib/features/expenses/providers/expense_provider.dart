@@ -14,8 +14,93 @@ class ExpenseProvider extends ChangeNotifier {
     );
   }
 
+  ExpenseEntry? expenseById(String id) {
+    for (final expense in _expenses) {
+      if (expense.id == id) {
+        return expense;
+      }
+    }
+
+    return null;
+  }
+
+  List<ExpenseEntry> expensesForDay(DateTime day) {
+    return _expenses
+        .where(
+          (expense) =>
+              expense.date.year == day.year &&
+              expense.date.month == day.month &&
+              expense.date.day == day.day,
+        )
+        .toList(growable: false);
+  }
+
+  List<ExpenseEntry> expensesForWeek(DateTime week) {
+    final startOfWeek = _startOfWeek(week);
+    final endOfWeek = startOfWeek.add(const Duration(days: 7));
+
+    return _expenses
+        .where(
+          (expense) =>
+              !expense.date.isBefore(startOfWeek) &&
+              expense.date.isBefore(endOfWeek),
+        )
+        .toList(growable: false);
+  }
+
+  List<ExpenseEntry> expensesForMonth(DateTime month) {
+    return _expenses
+        .where(
+          (expense) =>
+              expense.date.year == month.year &&
+              expense.date.month == month.month,
+        )
+        .toList(growable: false);
+  }
+
+  double totalSpentForDay(DateTime day) {
+    return _totalFor(expensesForDay(day));
+  }
+
+  double totalSpentForWeek(DateTime week) {
+    return _totalFor(expensesForWeek(week));
+  }
+
+  double totalSpentForMonth(DateTime month) {
+    return _totalFor(expensesForMonth(month));
+  }
+
   void addExpense(ExpenseEntry expense) {
     _expenses.insert(0, expense);
     notifyListeners();
+  }
+
+  void updateExpense(ExpenseEntry expense) {
+    final index = _expenses.indexWhere((entry) => entry.id == expense.id);
+    if (index < 0) {
+      return;
+    }
+
+    _expenses[index] = expense;
+    notifyListeners();
+  }
+
+  void deleteExpense(String id) {
+    final previousLength = _expenses.length;
+    _expenses.removeWhere((expense) => expense.id == id);
+    if (_expenses.length == previousLength) {
+      return;
+    }
+
+    notifyListeners();
+  }
+
+  double _totalFor(List<ExpenseEntry> expenses) {
+    return expenses.fold<double>(0, (total, expense) => total + expense.amount);
+  }
+
+  DateTime _startOfWeek(DateTime date) {
+    final dateOnly = DateTime(date.year, date.month, date.day);
+    return dateOnly.subtract(Duration(days: dateOnly.weekday - 1));
   }
 }

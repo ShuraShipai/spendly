@@ -85,6 +85,14 @@ class ExpenseCategory {
 
   bool get isCustom => !defaults.any((category) => category.id == id);
 
+  bool hasSameLabel(String otherLabel) {
+    return normalizedLabel(label) == normalizedLabel(otherLabel);
+  }
+
+  static String normalizedLabel(String label) {
+    return label.trim().toLowerCase();
+  }
+
   static String customIdFor(String label) {
     final slug = label
         .trim()

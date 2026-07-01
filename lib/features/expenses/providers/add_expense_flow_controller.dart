@@ -19,6 +19,9 @@ class AddExpenseFlowController extends ChangeNotifier {
   PaymentMethod? paymentMethod;
   ExpenseEntry? savedExpense;
   var showPaymentError = false;
+  var isSavingExpense = false;
+  double? _presetKeypadBaseAmount;
+  var _presetKeypadEntry = '';
 
   Future<void> loadCustomCategories({
     required String? userId,
@@ -37,6 +40,11 @@ class AddExpenseFlowController extends ChangeNotifier {
   }
 
   void appendAmount(String value) {
+    if (_presetKeypadBaseAmount != null) {
+      _appendPresetKeypadEntry(value);
+      return;
+    }
+
     if (value == '.' && amount.contains('.')) {
       return;
     }
@@ -51,11 +59,24 @@ class AddExpenseFlowController extends ChangeNotifier {
   void addPresetAmount(int value) {
     final currentAmount = double.tryParse(amount) ?? 0;
     final nextAmount = currentAmount + value;
+    _presetKeypadBaseAmount = nextAmount;
+    _presetKeypadEntry = '';
     amount = _formatAmount(nextAmount);
     notifyListeners();
   }
 
   void backspaceAmount() {
+    if (_presetKeypadBaseAmount != null && _presetKeypadEntry.isNotEmpty) {
+      _presetKeypadEntry = _presetKeypadEntry.substring(
+        0,
+        _presetKeypadEntry.length - 1,
+      );
+      _syncPresetAmount();
+      notifyListeners();
+      return;
+    }
+
+    _clearPresetKeypadEntry();
     if (amount.length <= 1) {
       amount = '0';
     } else {
@@ -85,7 +106,8 @@ class AddExpenseFlowController extends ChangeNotifier {
       color: _colorForLabel(label),
     );
     final existingIndex = categories.indexWhere(
-      (existing) => existing.id == customCategory.id,
+      (existing) =>
+          existing.id == customCategory.id || existing.hasSameLabel(label),
     );
 
     if (existingIndex >= 0) {
@@ -121,30 +143,41 @@ class AddExpenseFlowController extends ChangeNotifier {
     required CustomCategoryService? categoryService,
     required ExpenseProvider? expenseProvider,
   }) async {
+    if (isSavingExpense || step != AddExpenseStep.details) {
+      return false;
+    }
+
     if (paymentMethod == null) {
       showPaymentError = true;
       notifyListeners();
       return false;
     }
 
-    if (userId != null && categoryService != null && category.isCustom) {
-      await categoryService.saveCustomCategory(userId, category);
-    }
-
-    final expense = ExpenseEntry(
-      id: DateTime.now().microsecondsSinceEpoch.toString(),
-      amount: double.tryParse(amount) ?? 0,
-      category: category,
-      date: selectedDate,
-      paymentMethod: paymentMethod!,
-      note: note.trim().isEmpty ? null : note.trim(),
-    );
-
-    expenseProvider?.addExpense(expense);
-    savedExpense = expense;
-    step = AddExpenseStep.celebration;
+    isSavingExpense = true;
     notifyListeners();
-    return true;
+
+    try {
+      if (userId != null && categoryService != null && category.isCustom) {
+        await categoryService.saveCustomCategory(userId, category);
+      }
+
+      final expense = ExpenseEntry(
+        id: DateTime.now().microsecondsSinceEpoch.toString(),
+        amount: double.tryParse(amount) ?? 0,
+        category: category,
+        date: selectedDate,
+        paymentMethod: paymentMethod!,
+        note: note.trim().isEmpty ? null : note.trim(),
+      );
+
+      expenseProvider?.addExpense(expense);
+      savedExpense = expense;
+      step = AddExpenseStep.celebration;
+      return true;
+    } finally {
+      isSavingExpense = false;
+      notifyListeners();
+    }
   }
 
   void resetDraft() {
@@ -156,6 +189,8 @@ class AddExpenseFlowController extends ChangeNotifier {
     paymentMethod = null;
     savedExpense = null;
     showPaymentError = false;
+    isSavingExpense = false;
+    _clearPresetKeypadEntry();
     notifyListeners();
   }
 
@@ -189,5 +224,31 @@ class AddExpenseFlowController extends ChangeNotifier {
     }
 
     return value.toStringAsFixed(2);
+  }
+
+  void _appendPresetKeypadEntry(String value) {
+    if (value == '.' && _presetKeypadEntry.contains('.')) {
+      return;
+    }
+
+    if (value == '.' && _presetKeypadEntry.isEmpty) {
+      _presetKeypadEntry = '0.';
+    } else {
+      _presetKeypadEntry += value;
+    }
+
+    _syncPresetAmount();
+    notifyListeners();
+  }
+
+  void _syncPresetAmount() {
+    final baseAmount = _presetKeypadBaseAmount ?? 0;
+    final entryAmount = double.tryParse(_presetKeypadEntry) ?? 0;
+    amount = _formatAmount(baseAmount + entryAmount);
+  }
+
+  void _clearPresetKeypadEntry() {
+    _presetKeypadBaseAmount = null;
+    _presetKeypadEntry = '';
   }
 }

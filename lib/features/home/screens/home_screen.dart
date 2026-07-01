@@ -1,24 +1,28 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:provider/provider.dart';
 
 import '../../../core/theme/app_spacing.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../../expenses/providers/expense_provider.dart';
+import '../../expenses/models/expense_entry.dart';
+import '../models/dashboard_period.dart';
+import '../providers/dashboard_period_provider.dart';
 import '../widgets/email_verification_banner.dart';
 import '../widgets/empty_expense_state.dart';
 import '../widgets/home_header.dart';
 import '../widgets/period_selector.dart';
+import '../widgets/period_spend_card.dart';
 import '../widgets/recent_expenses_list.dart';
-import '../widgets/weekly_spend_card.dart';
 
-class HomeScreen extends StatefulWidget {
+class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
 
   @override
-  State<HomeScreen> createState() => _HomeScreenState();
+  ConsumerState<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
+class _HomeScreenState extends ConsumerState<HomeScreen> {
   var _showEmailBanner = true;
 
   @override
@@ -33,6 +37,18 @@ class _HomeScreenState extends State<HomeScreen> {
     final greeting = firstName == null ? 'Hi there' : 'Hi $firstName';
     final shouldShowEmailBanner =
         _showEmailBanner && !authProvider.isEmailVerified;
+    final selectedPeriod = ref.watch(dashboardPeriodProvider);
+    final referenceDate = DateTime.now();
+    final dashboardExpenses = _expensesForPeriod(
+      expenseProvider,
+      selectedPeriod,
+      referenceDate,
+    );
+    final dashboardTotal = _totalForPeriod(
+      expenseProvider,
+      selectedPeriod,
+      referenceDate,
+    );
 
     return SafeArea(
       child: ListView(
@@ -56,16 +72,49 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ],
           const SizedBox(height: AppSpacing.md),
-          const PeriodSelector(),
+          PeriodSelector(
+            selectedPeriod: selectedPeriod,
+            onPeriodSelected: (period) {
+              ref.read(dashboardPeriodProvider.notifier).state = period;
+            },
+          ),
           const SizedBox(height: AppSpacing.xl),
-          WeeklySpendCard(totalSpent: expenseProvider.totalSpent),
+          PeriodSpendCard(
+            totalSpent: dashboardTotal,
+            period: selectedPeriod,
+            referenceDate: referenceDate,
+          ),
           const SizedBox(height: AppSpacing.xxl),
-          if (expenseProvider.expenses.isEmpty)
+          if (dashboardExpenses.isEmpty)
             const EmptyExpenseState()
           else
-            RecentExpensesList(expenses: expenseProvider.expenses),
+            RecentExpensesList(expenses: dashboardExpenses),
         ],
       ),
     );
+  }
+
+  List<ExpenseEntry> _expensesForPeriod(
+    ExpenseProvider provider,
+    DashboardPeriod period,
+    DateTime referenceDate,
+  ) {
+    return switch (period) {
+      DashboardPeriod.today => provider.expensesForDay(referenceDate),
+      DashboardPeriod.week => provider.expensesForWeek(referenceDate),
+      DashboardPeriod.month => provider.expensesForMonth(referenceDate),
+    };
+  }
+
+  double _totalForPeriod(
+    ExpenseProvider provider,
+    DashboardPeriod period,
+    DateTime referenceDate,
+  ) {
+    return switch (period) {
+      DashboardPeriod.today => provider.totalSpentForDay(referenceDate),
+      DashboardPeriod.week => provider.totalSpentForWeek(referenceDate),
+      DashboardPeriod.month => provider.totalSpentForMonth(referenceDate),
+    };
   }
 }

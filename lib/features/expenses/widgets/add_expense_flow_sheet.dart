@@ -129,6 +129,7 @@ class _AddExpenseFlowSheetState extends State<AddExpenseFlowSheet> {
               note: _controller.note,
               paymentMethod: _controller.paymentMethod,
               showPaymentError: _controller.showPaymentError,
+              isSaving: _controller.isSavingExpense,
               onClose: () => Navigator.of(context).pop(),
               onBack: () => _controller.goTo(AddExpenseStep.amount),
               onCategoryChanged: _controller.selectCategory,

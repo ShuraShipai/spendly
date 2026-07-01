@@ -7,11 +7,13 @@ class MintActionButton extends StatelessWidget {
   const MintActionButton({
     required this.label,
     required this.onPressed,
+    this.isEnabled = true,
     super.key,
   });
 
   final String label;
   final VoidCallback onPressed;
+  final bool isEnabled;
 
   @override
   Widget build(BuildContext context) {
@@ -19,20 +21,24 @@ class MintActionButton extends StatelessWidget {
       width: double.infinity,
       child: DecoratedBox(
         decoration: BoxDecoration(
-          color: AppColors.mint,
+          color: isEnabled
+              ? AppColors.mint
+              : AppColors.mint.withValues(alpha: 0.45),
           borderRadius: BorderRadius.circular(17),
-          boxShadow: const [
-            BoxShadow(
-              color: Color(0x6634C6A8),
-              blurRadius: 20,
-              offset: Offset(0, 8),
-            ),
-          ],
+          boxShadow: isEnabled
+              ? const [
+                  BoxShadow(
+                    color: Color(0x6634C6A8),
+                    blurRadius: 20,
+                    offset: Offset(0, 8),
+                  ),
+                ]
+              : null,
         ),
         child: Material(
           color: Colors.transparent,
           child: InkWell(
-            onTap: onPressed,
+            onTap: isEnabled ? onPressed : null,
             borderRadius: BorderRadius.circular(17),
             child: Padding(
               padding: const EdgeInsets.all(AppSpacing.md),

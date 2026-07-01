@@ -2,11 +2,19 @@ import 'package:flutter/material.dart';
 
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
+import '../models/dashboard_period.dart';
 
-class WeeklySpendCard extends StatelessWidget {
-  const WeeklySpendCard({required this.totalSpent, super.key});
+class PeriodSpendCard extends StatelessWidget {
+  const PeriodSpendCard({
+    required this.totalSpent,
+    required this.period,
+    required this.referenceDate,
+    super.key,
+  });
 
   final double totalSpent;
+  final DashboardPeriod period;
+  final DateTime referenceDate;
 
   @override
   Widget build(BuildContext context) {
@@ -30,7 +38,7 @@ class WeeklySpendCard extends StatelessWidget {
         child: Column(
           children: [
             Text(
-              'SPENT THIS WEEK',
+              period.totalLabel,
               style: Theme.of(
                 context,
               ).textTheme.labelMedium?.copyWith(color: AppColors.inkSubtle),
@@ -43,8 +51,8 @@ class WeeklySpendCard extends StatelessWidget {
             const SizedBox(height: AppSpacing.xs),
             Text(
               totalSpent == 0
-                  ? 'Add expenses to see your total grow'
-                  : 'Nice. Your dashboard is live.',
+                  ? 'Add expenses to see ${_periodName()} grow'
+                  : '${_periodName()} dashboard is live.',
               style: Theme.of(context).textTheme.bodySmall,
               textAlign: TextAlign.center,
             ),
@@ -59,5 +67,32 @@ class WeeklySpendCard extends StatelessWidget {
       return '₹${amount.round()}';
     }
     return '₹${amount.toStringAsFixed(2)}';
+  }
+
+  String _periodName() {
+    return switch (period) {
+      DashboardPeriod.today => 'today',
+      DashboardPeriod.week => 'this week',
+      DashboardPeriod.month => _monthName(referenceDate),
+    };
+  }
+
+  String _monthName(DateTime date) {
+    const monthNames = [
+      'January',
+      'February',
+      'March',
+      'April',
+      'May',
+      'June',
+      'July',
+      'August',
+      'September',
+      'October',
+      'November',
+      'December',
+    ];
+
+    return monthNames[date.month - 1];
   }
 }

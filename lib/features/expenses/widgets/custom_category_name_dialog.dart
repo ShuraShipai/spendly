@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
 
 class CustomCategoryNameDialog extends StatefulWidget {
-  const CustomCategoryNameDialog({this.initialName = '', super.key});
-
-  final String initialName;
+  const CustomCategoryNameDialog({super.key});
 
   @override
   State<CustomCategoryNameDialog> createState() =>
@@ -17,7 +15,7 @@ class _CustomCategoryNameDialogState extends State<CustomCategoryNameDialog> {
   @override
   void initState() {
     super.initState();
-    _controller = TextEditingController(text: widget.initialName);
+    _controller = TextEditingController();
   }
 
   @override
@@ -52,7 +50,10 @@ class _CustomCategoryNameDialogState extends State<CustomCategoryNameDialog> {
           }
         },
         decoration: InputDecoration(
-          hintText: 'Gym, Medicine',
+          hintText: 'e.g., Gym',
+          hintStyle: Theme.of(
+            context,
+          ).textTheme.bodyMedium?.copyWith(color: Colors.grey.shade400),
           errorText: _showError ? 'Enter a category name' : null,
         ),
       ),

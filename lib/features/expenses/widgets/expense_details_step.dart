@@ -23,6 +23,7 @@ class ExpenseDetailsStep extends StatelessWidget {
     required this.note,
     required this.paymentMethod,
     required this.showPaymentError,
+    required this.isSaving,
     required this.onClose,
     required this.onBack,
     required this.onCategoryChanged,
@@ -41,6 +42,7 @@ class ExpenseDetailsStep extends StatelessWidget {
   final String note;
   final PaymentMethod? paymentMethod;
   final bool showPaymentError;
+  final bool isSaving;
   final VoidCallback onClose;
   final VoidCallback onBack;
   final ValueChanged<ExpenseCategory> onCategoryChanged;
@@ -122,7 +124,11 @@ class ExpenseDetailsStep extends StatelessWidget {
           const SizedBox(height: AppSpacing.md),
           ExpenseNoteField(note: note, onChanged: onNoteChanged),
           const Spacer(),
-          MintActionButton(label: 'Save expense', onPressed: onSave),
+          MintActionButton(
+            label: isSaving ? 'Saving...' : 'Save expense',
+            onPressed: onSave,
+            isEnabled: !isSaving,
+          ),
         ],
       ),
     );

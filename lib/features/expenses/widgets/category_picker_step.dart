@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../models/expense_category.dart';
-import 'category_picker_tile.dart';
 import 'custom_category_name_dialog.dart';
 import 'expense_sheet_frame.dart';
 import 'expense_sheet_header.dart';
@@ -31,14 +30,14 @@ class CategoryPickerStep extends StatefulWidget {
 
 class _CategoryPickerStepState extends State<CategoryPickerStep> {
   final _searchController = TextEditingController();
-  final _gridController = ScrollController();
+  final _listController = ScrollController();
   var _query = '';
   var _creating = false;
 
   @override
   void dispose() {
     _searchController.dispose();
-    _gridController.dispose();
+    _listController.dispose();
     super.dispose();
   }
 
@@ -72,7 +71,7 @@ class _CategoryPickerStepState extends State<CategoryPickerStep> {
     final label = await showDialog<String>(
       context: context,
       builder: (context) {
-        return CustomCategoryNameDialog(initialName: _query.trim());
+        return const CustomCategoryNameDialog();
       },
     );
 
@@ -80,19 +79,20 @@ class _CategoryPickerStepState extends State<CategoryPickerStep> {
       return;
     }
 
-    final normalizedLabel = label.trim().toLowerCase();
-    final matchingCategory = _matchingCategoryFor(normalizedLabel);
+    final matchingCategory = _matchingCategoryFor(label);
     if (matchingCategory != null) {
-      widget.onCategorySelected(matchingCategory);
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Category already exists.')));
       return;
     }
 
     await _createCategory(label.trim());
   }
 
-  ExpenseCategory? _matchingCategoryFor(String normalizedLabel) {
+  ExpenseCategory? _matchingCategoryFor(String label) {
     for (final category in widget.categories) {
-      if (category.label.toLowerCase() == normalizedLabel) {
+      if (category.hasSameLabel(label)) {
         return category;
       }
     }
@@ -143,10 +143,10 @@ class _CategoryPickerStepState extends State<CategoryPickerStep> {
           const SizedBox(height: AppSpacing.md),
           Expanded(
             child: Scrollbar(
-              controller: _gridController,
+              controller: _listController,
               thumbVisibility: true,
-              child: GridView.count(
-                controller: _gridController,
+              child: ListView.separated(
+                controller: _listController,
                 padding: const EdgeInsets.only(
                   right: AppSpacing.xs,
                   bottom: AppSpacing.lg,
@@ -154,18 +154,17 @@ class _CategoryPickerStepState extends State<CategoryPickerStep> {
                 physics: const BouncingScrollPhysics(
                   parent: AlwaysScrollableScrollPhysics(),
                 ),
-                crossAxisCount: 3,
-                mainAxisSpacing: AppSpacing.xs,
-                crossAxisSpacing: AppSpacing.xs,
-                childAspectRatio: 0.95,
-                children: [
-                  for (final category in filteredCategories)
-                    CategoryPickerTile(
-                      category: category,
-                      selected: category == widget.selectedCategory,
-                      onTap: () => widget.onCategorySelected(category),
-                    ),
-                ],
+                itemCount: filteredCategories.length,
+                separatorBuilder: (_, _) =>
+                    const SizedBox(height: AppSpacing.xs),
+                itemBuilder: (context, index) {
+                  final category = filteredCategories[index];
+                  return _CategoryListRow(
+                    category: category,
+                    selected: category == widget.selectedCategory,
+                    onTap: () => widget.onCategorySelected(category),
+                  );
+                },
               ),
             ),
           ),
@@ -173,8 +172,93 @@ class _CategoryPickerStepState extends State<CategoryPickerStep> {
           MintActionButton(
             label: _creating ? 'Creating...' : '+ Add Category',
             onPressed: _handleAddCategory,
+            isEnabled: !_creating,
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _CategoryListRow extends StatelessWidget {
+  const _CategoryListRow({
+    required this.category,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final ExpenseCategory category;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final borderColor = selected
+        ? AppColors.mint
+        : isDark
+        ? AppColors.darkInkMuted
+        : AppColors.line;
+
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(14),
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          color: isDark ? AppColors.darkSurface : AppColors.card,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: borderColor, width: selected ? 1.5 : 1),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.sm,
+            vertical: AppSpacing.xs,
+          ),
+          child: Row(
+            children: [
+              DecoratedBox(
+                decoration: BoxDecoration(
+                  color: category.color,
+                  borderRadius: BorderRadius.circular(11),
+                ),
+                child: SizedBox.square(
+                  dimension: 34,
+                  child: Icon(category.icon, color: Colors.white, size: 18),
+                ),
+              ),
+              const SizedBox(width: AppSpacing.sm),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      category.label,
+                      style: Theme.of(context).textTheme.labelLarge,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: AppSpacing.xxs),
+                    Text(
+                      category.isCustom
+                          ? 'Custom category'
+                          : 'Default category',
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: AppColors.inkSubtle,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: AppSpacing.sm),
+              Icon(
+                selected
+                    ? Icons.check_circle_rounded
+                    : Icons.chevron_right_rounded,
+                color: selected ? AppColors.mint : AppColors.inkSubtle,
+                size: selected ? 21 : 20,
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
