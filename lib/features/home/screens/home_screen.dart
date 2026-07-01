@@ -3,10 +3,12 @@ import 'package:provider/provider.dart';
 
 import '../../../core/theme/app_spacing.dart';
 import '../../auth/providers/auth_provider.dart';
+import '../../expenses/providers/expense_provider.dart';
 import '../widgets/email_verification_banner.dart';
 import '../widgets/empty_expense_state.dart';
 import '../widgets/home_header.dart';
 import '../widgets/period_selector.dart';
+import '../widgets/recent_expenses_list.dart';
 import '../widgets/weekly_spend_card.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -22,6 +24,7 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     final authProvider = context.watch<AuthProvider>();
+    final expenseProvider = context.watch<ExpenseProvider>();
     final user = authProvider.user;
     final displayName = user?.displayName;
     final firstName = displayName == null || displayName.isEmpty
@@ -55,9 +58,12 @@ class _HomeScreenState extends State<HomeScreen> {
           const SizedBox(height: AppSpacing.md),
           const PeriodSelector(),
           const SizedBox(height: AppSpacing.xl),
-          const WeeklySpendCard(),
+          WeeklySpendCard(totalSpent: expenseProvider.totalSpent),
           const SizedBox(height: AppSpacing.xxl),
-          const EmptyExpenseState(),
+          if (expenseProvider.expenses.isEmpty)
+            const EmptyExpenseState()
+          else
+            RecentExpensesList(expenses: expenseProvider.expenses),
         ],
       ),
     );

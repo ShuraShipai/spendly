@@ -39,8 +39,49 @@ class ExpenseCategory {
     color: AppColors.shopping,
     icon: Icons.shopping_bag_rounded,
   );
+  static const bills = ExpenseCategory(
+    id: 'bills',
+    label: 'Bills',
+    color: AppColors.bills,
+    icon: Icons.receipt_long_rounded,
+  );
+  static const rent = ExpenseCategory(
+    id: 'rent',
+    label: 'Rent',
+    color: AppColors.rent,
+    icon: Icons.home_rounded,
+  );
+  static const health = ExpenseCategory(
+    id: 'health',
+    label: 'Health',
+    color: AppColors.health,
+    icon: Icons.favorite_rounded,
+  );
+  static const fun = ExpenseCategory(
+    id: 'fun',
+    label: 'Fun',
+    color: AppColors.entertainment,
+    icon: Icons.play_arrow_rounded,
+  );
+  static const travel = ExpenseCategory(
+    id: 'travel',
+    label: 'Travel',
+    color: AppColors.travel,
+    icon: Icons.near_me_rounded,
+  );
 
-  static const defaults = [food, groceries, transport, shopping];
+  static const quickDefaults = [food, groceries, transport];
+  static const defaults = [
+    food,
+    groceries,
+    transport,
+    shopping,
+    bills,
+    rent,
+    health,
+    fun,
+    travel,
+  ];
 
   bool get isCustom => !defaults.any((category) => category.id == id);
 

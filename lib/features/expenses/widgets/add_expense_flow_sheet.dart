@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../../../core/theme/app_colors.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../models/expense_category.dart';
-import '../models/payment_method.dart';
+import '../providers/add_expense_flow_controller.dart';
+import '../providers/expense_provider.dart';
 import '../services/custom_category_service.dart';
 import 'amount_keypad_step.dart';
+import 'category_picker_step.dart';
+import 'expense_celebration_step.dart';
 import 'expense_details_step.dart';
 
 class AddExpenseFlowSheet extends StatefulWidget {
@@ -20,14 +22,14 @@ class AddExpenseFlowSheet extends StatefulWidget {
 }
 
 class _AddExpenseFlowSheetState extends State<AddExpenseFlowSheet> {
-  var _step = _ExpenseStep.amount;
-  var _amount = '0';
-  var _category = ExpenseCategory.food;
-  var _categories = ExpenseCategory.defaults;
-  var _selectedDate = DateTime.now();
-  PaymentMethod? _paymentMethod;
-  var _showPaymentError = false;
+  late final AddExpenseFlowController _controller;
   var _loadedCustomCategories = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AddExpenseFlowController();
+  }
 
   @override
   void didChangeDependencies() {
@@ -36,7 +38,16 @@ class _AddExpenseFlowSheetState extends State<AddExpenseFlowSheet> {
       return;
     }
     _loadedCustomCategories = true;
-    _loadCustomCategories();
+    _controller.loadCustomCategories(
+      userId: _userId,
+      service: _categoryService,
+    );
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
   }
 
   String? get _userId {
@@ -59,89 +70,19 @@ class _AddExpenseFlowSheetState extends State<AddExpenseFlowSheet> {
     }
   }
 
-  Future<void> _loadCustomCategories() async {
-    final userId = _userId;
-    final service = _categoryService;
-    if (userId == null || service == null) {
-      return;
+  ExpenseProvider? get _expenseProvider {
+    try {
+      return context.read<ExpenseProvider>();
+    } on ProviderNotFoundException {
+      return null;
     }
-
-    final customCategories = await service.loadCustomCategories(userId);
-    if (!mounted) {
-      return;
-    }
-
-    setState(() {
-      _categories = _mergeCategories(customCategories);
-      if (_categories.contains(_category)) {
-        return;
-      }
-      _category = ExpenseCategory.food;
-    });
-  }
-
-  List<ExpenseCategory> _mergeCategories(
-    Iterable<ExpenseCategory> customCategories,
-  ) {
-    final merged = [...ExpenseCategory.defaults];
-    for (final category in customCategories) {
-      if (!merged.any((existing) => existing.id == category.id)) {
-        merged.add(category);
-      }
-    }
-    return merged;
-  }
-
-  void _appendAmount(String value) {
-    setState(() {
-      if (value == '.' && _amount.contains('.')) {
-        return;
-      }
-      if (_amount == '0' && value != '.') {
-        _amount = value;
-        return;
-      }
-      _amount += value;
-    });
-  }
-
-  void _backspaceAmount() {
-    setState(() {
-      if (_amount.length <= 1) {
-        _amount = '0';
-        return;
-      }
-      _amount = _amount.substring(0, _amount.length - 1);
-    });
-  }
-
-  Future<void> _addCustomCategory() async {
-    final category = await showDialog<ExpenseCategory>(
-      context: context,
-      builder: (context) => const _CustomCategoryDialog(),
-    );
-
-    if (category == null) {
-      return;
-    }
-
-    final existingIndex = _categories.indexWhere(
-      (existing) => existing.id == category.id,
-    );
-
-    setState(() {
-      if (existingIndex >= 0) {
-        _category = _categories[existingIndex];
-        return;
-      }
-      _categories = [..._categories, category];
-      _category = category;
-    });
   }
 
   Future<void> _pickDate() async {
     final today = DateUtils.dateOnly(DateTime.now());
-    final initialDate = _selectedDate.isAfter(today) ? today : _selectedDate;
+    final initialDate = _controller.selectedDate.isAfter(today)
+        ? today
+        : _controller.selectedDate;
     final pickedDate = await showDatePicker(
       context: context,
       initialDate: initialDate,
@@ -149,143 +90,78 @@ class _AddExpenseFlowSheetState extends State<AddExpenseFlowSheet> {
       lastDate: today,
     );
 
-    if (pickedDate == null) {
-      return;
+    if (pickedDate != null) {
+      _controller.setDate(pickedDate);
     }
-
-    setState(() => _selectedDate = pickedDate);
   }
 
   Future<void> _saveExpense() async {
-    if (_paymentMethod == null) {
-      setState(() => _showPaymentError = true);
-      return;
-    }
-
-    final userId = _userId;
-    final service = _categoryService;
-    if (userId != null && service != null && _category.isCustom) {
-      await service.saveCustomCategory(userId, _category);
-    }
-
-    if (!mounted) {
-      return;
-    }
-
-    Navigator.of(context).pop();
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Saved ₹$_amount ${_category.label} expense')),
+    await _controller.saveExpense(
+      userId: _userId,
+      categoryService: _categoryService,
+      expenseProvider: _expenseProvider,
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    final isAmountStep = _step == _ExpenseStep.amount;
-
-    return AnimatedSwitcher(
-      duration: const Duration(milliseconds: 220),
-      child: isAmountStep
-          ? AmountKeypadStep(
+    return AnimatedBuilder(
+      animation: _controller,
+      builder: (context, _) {
+        return AnimatedSwitcher(
+          duration: const Duration(milliseconds: 220),
+          child: switch (_controller.step) {
+            AddExpenseStep.amount => AmountKeypadStep(
               key: const ValueKey('amount'),
-              amount: _amount,
+              amount: _controller.amount,
               onClose: () => Navigator.of(context).pop(),
-              onKeyPressed: _appendAmount,
-              onBackspace: _backspaceAmount,
-              onNext: () => setState(() => _step = _ExpenseStep.details),
-            )
-          : ExpenseDetailsStep(
+              onKeyPressed: _controller.appendAmount,
+              onPresetAmountPressed: _controller.addPresetAmount,
+              onBackspace: _controller.backspaceAmount,
+              onNext: () => _controller.goTo(AddExpenseStep.details),
+            ),
+            AddExpenseStep.details => ExpenseDetailsStep(
               key: const ValueKey('details'),
-              amount: _amount,
-              category: _category,
-              categories: _categories,
-              selectedDate: _selectedDate,
-              paymentMethod: _paymentMethod,
-              showPaymentError: _showPaymentError,
+              amount: _controller.amount,
+              category: _controller.category,
+              categories: ExpenseCategory.quickDefaults,
+              selectedDate: _controller.selectedDate,
+              note: _controller.note,
+              paymentMethod: _controller.paymentMethod,
+              showPaymentError: _controller.showPaymentError,
               onClose: () => Navigator.of(context).pop(),
-              onBack: () => setState(() => _step = _ExpenseStep.amount),
-              onCategoryChanged: (category) {
-                setState(() => _category = category);
-              },
-              onAddCategory: _addCustomCategory,
+              onBack: () => _controller.goTo(AddExpenseStep.amount),
+              onCategoryChanged: _controller.selectCategory,
+              onAddCategory: () =>
+                  _controller.goTo(AddExpenseStep.categoryPicker),
               onDatePressed: _pickDate,
-              onPaymentMethodChanged: (method) {
-                setState(() {
-                  _paymentMethod = method;
-                  _showPaymentError = false;
-                });
-              },
+              onNoteChanged: _controller.setNote,
+              onPaymentMethodChanged: _controller.setPaymentMethod,
               onSave: _saveExpense,
             ),
-    );
-  }
-}
-
-enum _ExpenseStep { amount, details }
-
-class _CustomCategoryDialog extends StatefulWidget {
-  const _CustomCategoryDialog();
-
-  @override
-  State<_CustomCategoryDialog> createState() => _CustomCategoryDialogState();
-}
-
-class _CustomCategoryDialogState extends State<_CustomCategoryDialog> {
-  final _controller = TextEditingController();
-  var _showError = false;
-
-  static const _customColors = [
-    AppColors.rent,
-    AppColors.health,
-    AppColors.entertainment,
-    AppColors.travel,
-    AppColors.bills,
-  ];
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  void _save() {
-    final label = _controller.text.trim();
-    if (label.isEmpty) {
-      setState(() => _showError = true);
-      return;
-    }
-
-    final color = _customColors[label.length % _customColors.length];
-    Navigator.of(
-      context,
-    ).pop(ExpenseCategory.custom(label: label, color: color));
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return AlertDialog(
-      title: const Text('New category'),
-      content: TextField(
-        controller: _controller,
-        autofocus: true,
-        textInputAction: TextInputAction.done,
-        onSubmitted: (_) => _save(),
-        onChanged: (_) {
-          if (_showError) {
-            setState(() => _showError = false);
-          }
-        },
-        decoration: InputDecoration(
-          hintText: 'Category name',
-          errorText: _showError ? 'Enter a category name' : null,
-        ),
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(),
-          child: const Text('Cancel'),
-        ),
-        FilledButton(onPressed: _save, child: const Text('Save')),
-      ],
+            AddExpenseStep.categoryPicker => CategoryPickerStep(
+              key: const ValueKey('category-picker'),
+              categories: _controller.categories,
+              selectedCategory: _controller.category,
+              onBack: () => _controller.goTo(AddExpenseStep.details),
+              onCategorySelected: _controller.selectCategory,
+              onCreateCategory: (label) {
+                return _controller.createCustomCategory(
+                  label: label,
+                  userId: _userId,
+                  service: _categoryService,
+                );
+              },
+            ),
+            AddExpenseStep.celebration => ExpenseCelebrationStep(
+              key: const ValueKey('celebration'),
+              expense: _controller.savedExpense!,
+              onDone: () => Navigator.of(context).pop(),
+              onAddAnother: _controller.resetDraft,
+            ),
+          },
+        );
+      },
     );
   }
 }

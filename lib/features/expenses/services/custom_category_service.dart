@@ -5,15 +5,15 @@ import '../constants/expense_constants.dart';
 import '../models/expense_category.dart';
 
 class CustomCategoryService {
-  CustomCategoryService({this._firestore});
+  CustomCategoryService({this.firestore});
 
-  final FirebaseFirestore? _firestore;
+  final FirebaseFirestore? firestore;
   final Map<String, List<ExpenseCategory>> _memoryStore = {};
 
-  bool get _usesMemory => _firestore == null;
+  bool get _usesMemory => firestore == null;
 
   CollectionReference<Map<String, dynamic>> _customCategories(String uid) {
-    return _firestore!
+    return firestore!
         .collection(AuthConstants.usersCollection)
         .doc(uid)
         .collection(ExpenseConstants.customCategoriesCollection);

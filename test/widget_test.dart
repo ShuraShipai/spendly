@@ -7,6 +7,7 @@ import 'package:spendly/features/auth/constants/auth_constants.dart';
 import 'package:spendly/features/auth/constants/auth_validators.dart';
 import 'package:spendly/features/auth/models/password_strength.dart';
 import 'package:spendly/features/auth/screens/welcome_screen.dart';
+import 'package:spendly/features/expenses/providers/expense_provider.dart';
 import 'package:spendly/features/expenses/services/custom_category_service.dart';
 import 'package:spendly/features/expenses/widgets/add_expense_flow_sheet.dart';
 import 'package:spendly/features/home/widgets/email_verification_banner.dart';
@@ -115,6 +116,27 @@ void main() {
     expect(find.text('Cash'), findsNothing);
   });
 
+  testWidgets('adds quick amount chips to the current amount', (
+    WidgetTester tester,
+  ) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.light,
+        home: const Scaffold(body: AddExpenseFlowSheet()),
+      ),
+    );
+
+    await tester.tap(find.text('+₹500'));
+    await tester.pump();
+    await tester.tap(find.text('+₹500'));
+    await tester.pump();
+
+    final richTextValues = tester
+        .widgetList<RichText>(find.byType(RichText))
+        .map((richText) => richText.text.toPlainText());
+    expect(richTextValues, contains('₹1000'));
+  });
+
   testWidgets('requires payment method and supports custom categories', (
     WidgetTester tester,
   ) async {
@@ -144,13 +166,38 @@ void main() {
     expect(find.text('UPI'), findsOneWidget);
     expect(find.text('Required'), findsNothing);
 
-    await tester.tap(find.text('+ More'));
-    await tester.pumpAndSettle();
-    await tester.enterText(find.byType(TextField).last, 'Coffee');
-    await tester.tap(find.widgetWithText(FilledButton, 'Save'));
+    await tester.enterText(
+      find.byType(TextField).last,
+      'Monthly internet bill',
+    );
     await tester.pumpAndSettle();
 
+    await tester.tap(find.text('+ More'));
+    await tester.pumpAndSettle();
+    expect(find.text('Pick a category'), findsOneWidget);
+    expect(find.text('+ Add Category'), findsOneWidget);
+    await tester.tap(find.text('+ Add Category'));
+    await tester.pumpAndSettle();
+    expect(find.text('Add category'), findsOneWidget);
+    await tester.enterText(find.byType(TextField).last, 'Coffee');
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Save'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('New expense'), findsOneWidget);
+    expect(find.text('Food'), findsOneWidget);
+    expect(find.text('Groceries'), findsOneWidget);
+    expect(find.text('Transport'), findsOneWidget);
+    expect(find.text('+ More'), findsOneWidget);
     expect(find.text('Coffee'), findsOneWidget);
+
+    await tester.tap(find.text('Save expense'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Nice one!'), findsOneWidget);
+    expect(find.text('Coffee expense'), findsOneWidget);
+    expect(find.text('Monthly internet bill · Today'), findsOneWidget);
+    expect(find.text('Done'), findsOneWidget);
   });
 
   testWidgets('persists custom categories after the first saved expense', (
@@ -163,8 +210,11 @@ void main() {
       return tester.pumpWidget(
         MaterialApp(
           theme: AppTheme.light,
-          home: Provider(
-            create: (_) => categoryService,
+          home: MultiProvider(
+            providers: [
+              Provider(create: (_) => categoryService),
+              ChangeNotifierProvider(create: (_) => ExpenseProvider()),
+            ],
             child: const Scaffold(body: AddExpenseFlowSheet(userId: userId)),
           ),
         ),
@@ -182,12 +232,18 @@ void main() {
 
     await tester.tap(find.text('+ More'));
     await tester.pumpAndSettle();
+    expect(find.text('+ Add Category'), findsOneWidget);
+    await tester.tap(find.text('+ Add Category'));
+    await tester.pumpAndSettle();
     await tester.enterText(find.byType(TextField).last, 'Coffee');
-    await tester.tap(find.widgetWithText(FilledButton, 'Save'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Save'));
     await tester.pumpAndSettle();
 
     await tester.tap(find.text('Save expense'));
     await tester.pumpAndSettle();
+
+    expect(find.text('Nice one!'), findsOneWidget);
 
     final savedCategories = await categoryService.loadCustomCategories(userId);
     expect(savedCategories, hasLength(1));
@@ -198,7 +254,14 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.text('Next'));
     await tester.pumpAndSettle();
+    await tester.tap(find.text('+ More'));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField).last, 'Coffee');
+    await tester.pumpAndSettle();
 
-    expect(find.text('Coffee'), findsOneWidget);
+    expect(
+      find.descendant(of: find.byType(GridView), matching: find.text('Coffee')),
+      findsOneWidget,
+    );
   });
 }

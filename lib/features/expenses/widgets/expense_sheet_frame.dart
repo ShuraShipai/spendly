@@ -9,10 +9,16 @@ class ExpenseSheetFrame extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final mediaQuery = MediaQuery.of(context);
+    final availableHeight =
+        mediaQuery.size.height -
+        mediaQuery.padding.top -
+        mediaQuery.padding.bottom;
+
     return SafeArea(
       top: false,
       child: SizedBox(
-        height: 640,
+        height: availableHeight < 640 ? availableHeight : 640,
         child: Center(
           child: ConstrainedBox(
             constraints: const BoxConstraints(
