@@ -42,6 +42,18 @@ class ExpenseCategory {
 
   static const defaults = [food, groceries, transport, shopping];
 
+  bool get isCustom => !defaults.any((category) => category.id == id);
+
+  static String customIdFor(String label) {
+    final slug = label
+        .trim()
+        .toLowerCase()
+        .replaceAll(RegExp(r'[^a-z0-9]+'), '-')
+        .replaceAll(RegExp(r'^-+|-+$'), '');
+
+    return 'custom-${slug.isEmpty ? 'category' : slug}';
+  }
+
   factory ExpenseCategory.custom({
     required String label,
     required Color color,
@@ -49,11 +61,24 @@ class ExpenseCategory {
     final trimmedLabel = label.trim();
 
     return ExpenseCategory(
-      id: 'custom-${trimmedLabel.toLowerCase()}-${DateTime.now().microsecondsSinceEpoch}',
+      id: customIdFor(trimmedLabel),
       label: trimmedLabel,
       color: color,
       icon: Icons.sell_rounded,
     );
+  }
+
+  factory ExpenseCategory.fromMap(Map<String, dynamic> map) {
+    return ExpenseCategory(
+      id: map['id'] as String,
+      label: map['label'] as String,
+      color: Color(map['color'] as int),
+      icon: Icons.sell_rounded,
+    );
+  }
+
+  Map<String, Object?> toMap() {
+    return {'id': id, 'label': label, 'color': color.toARGB32()};
   }
 
   @override
