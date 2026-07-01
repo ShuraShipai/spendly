@@ -7,6 +7,8 @@ import '../models/expense_category.dart';
 import '../models/payment_method.dart';
 import '../providers/expense_provider.dart';
 import '../widgets/category_chip.dart';
+import '../widgets/edit_amount_editor.dart';
+import '../widgets/edit_expense_header.dart';
 import '../widgets/expense_info_field.dart';
 import '../widgets/mint_action_button.dart';
 import '../widgets/section_label.dart';
@@ -89,12 +91,12 @@ class _EditExpenseScreenState extends State<EditExpenseScreen> {
             AppSpacing.lg,
           ),
           children: [
-            _Header(
+            EditExpenseHeader(
               onCancel: () => Navigator.of(context).pop(),
               onSave: () => _save(expense.id),
             ),
             const SizedBox(height: AppSpacing.lg),
-            _AmountEditor(controller: _amountController),
+            EditAmountEditor(controller: _amountController),
             const SizedBox(height: AppSpacing.lg),
             const SectionLabel('CATEGORY'),
             const SizedBox(height: AppSpacing.xs),
@@ -231,77 +233,5 @@ class _EditExpenseScreenState extends State<EditExpenseScreen> {
       return 'Today';
     }
     return '${date.day}/${date.month}/${date.year}';
-  }
-}
-
-class _Header extends StatelessWidget {
-  const _Header({required this.onCancel, required this.onSave});
-
-  final VoidCallback onCancel;
-  final VoidCallback onSave;
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        TextButton(onPressed: onCancel, child: const Text('Cancel')),
-        Expanded(
-          child: Text(
-            'Edit expense',
-            style: Theme.of(context).textTheme.titleMedium,
-            textAlign: TextAlign.center,
-          ),
-        ),
-        TextButton(onPressed: onSave, child: const Text('Save')),
-      ],
-    );
-  }
-}
-
-class _AmountEditor extends StatelessWidget {
-  const _AmountEditor({required this.controller});
-
-  final TextEditingController controller;
-
-  @override
-  Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: isDark ? AppColors.darkSurface : AppColors.card,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: AppColors.mint, width: 1.5),
-        boxShadow: const [
-          BoxShadow(
-            color: Color(0x3334C6A8),
-            blurRadius: 14,
-            offset: Offset(0, 6),
-          ),
-        ],
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(AppSpacing.lg),
-        child: Column(
-          children: [
-            Text(
-              'AMOUNT',
-              style: Theme.of(
-                context,
-              ).textTheme.labelMedium?.copyWith(color: AppColors.inkSubtle),
-            ),
-            TextField(
-              controller: controller,
-              keyboardType: const TextInputType.numberWithOptions(
-                decimal: true,
-              ),
-              textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.displaySmall,
-              decoration: const InputDecoration(prefixText: '₹'),
-            ),
-          ],
-        ),
-      ),
-    );
   }
 }
