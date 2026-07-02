@@ -71,5 +71,31 @@ void main() {
       expect(provider.expenseById('gym'), isNull);
       expect(provider.expenses, isEmpty);
     });
+
+    test('restores a deleted expense for undo', () {
+      final provider = ExpenseProvider();
+      final expense = ExpenseEntry(
+        id: 'coffee',
+        amount: 120,
+        category: ExpenseCategory.food,
+        date: DateTime(2026, 7, 2),
+        paymentMethod: PaymentMethod.cash,
+      );
+
+      provider.addExpense(expense);
+
+      final deletedExpense = provider.deleteExpense('coffee');
+
+      expect(deletedExpense, expense);
+      expect(provider.expenses, isEmpty);
+
+      provider.restoreExpense(deletedExpense!);
+
+      expect(provider.expenses, [expense]);
+
+      provider.restoreExpense(expense);
+
+      expect(provider.expenses, [expense]);
+    });
   });
 }
