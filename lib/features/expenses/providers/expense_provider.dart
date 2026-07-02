@@ -85,13 +85,23 @@ class ExpenseProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  void deleteExpense(String id) {
-    final previousLength = _expenses.length;
-    _expenses.removeWhere((expense) => expense.id == id);
-    if (_expenses.length == previousLength) {
+  ExpenseEntry? deleteExpense(String id) {
+    final index = _expenses.indexWhere((expense) => expense.id == id);
+    if (index < 0) {
+      return null;
+    }
+
+    final expense = _expenses.removeAt(index);
+    notifyListeners();
+    return expense;
+  }
+
+  void restoreExpense(ExpenseEntry expense) {
+    if (_expenses.any((entry) => entry.id == expense.id)) {
       return;
     }
 
+    _expenses.insert(0, expense);
     notifyListeners();
   }
 
