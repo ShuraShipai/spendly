@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 
 import '../../../core/theme/app_colors.dart';
 import '../models/expense_entry.dart';
+import 'delete_expense_icon.dart';
+import 'delete_expense_sheet_action_button.dart';
 
 class DeleteExpenseConfirmationSheet extends StatelessWidget {
   const DeleteExpenseConfirmationSheet({required this.expense, super.key});
@@ -31,7 +33,7 @@ class DeleteExpenseConfirmationSheet extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const _DeleteIcon(),
+            const DeleteExpenseIcon(),
             const SizedBox(height: 14),
             Text(
               'Delete this expense?',
@@ -58,7 +60,7 @@ class DeleteExpenseConfirmationSheet extends StatelessWidget {
             Row(
               children: [
                 Expanded(
-                  child: _SheetActionButton(
+                  child: DeleteExpenseSheetActionButton(
                     label: 'Keep',
                     foregroundColor: AppColors.inkMuted,
                     backgroundColor: const Color(0xFFF2EEE8),
@@ -67,7 +69,7 @@ class DeleteExpenseConfirmationSheet extends StatelessWidget {
                 ),
                 const SizedBox(width: 10),
                 Expanded(
-                  child: _SheetActionButton(
+                  child: DeleteExpenseSheetActionButton(
                     label: 'Delete',
                     foregroundColor: Colors.white,
                     backgroundColor: AppColors.danger,
@@ -84,73 +86,6 @@ class DeleteExpenseConfirmationSheet extends StatelessWidget {
               ],
             ),
           ],
-        ),
-      ),
-    );
-  }
-}
-
-class _DeleteIcon extends StatelessWidget {
-  const _DeleteIcon();
-
-  @override
-  Widget build(BuildContext context) {
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: AppColors.dangerSurface,
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: const SizedBox.square(
-        dimension: 60,
-        child: Icon(
-          Icons.delete_outline_rounded,
-          color: AppColors.danger,
-          size: 28,
-        ),
-      ),
-    );
-  }
-}
-
-class _SheetActionButton extends StatelessWidget {
-  const _SheetActionButton({
-    required this.label,
-    required this.foregroundColor,
-    required this.backgroundColor,
-    required this.onPressed,
-    this.boxShadow,
-  });
-
-  final String label;
-  final Color foregroundColor;
-  final Color backgroundColor;
-  final List<BoxShadow>? boxShadow;
-  final VoidCallback onPressed;
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: backgroundColor,
-      borderRadius: BorderRadius.circular(15),
-      child: InkWell(
-        onTap: onPressed,
-        borderRadius: BorderRadius.circular(15),
-        child: Container(
-          alignment: Alignment.center,
-          padding: const EdgeInsets.all(13),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(15),
-            boxShadow: boxShadow,
-          ),
-          child: Text(
-            label,
-            style: Theme.of(context).textTheme.labelLarge?.copyWith(
-              color: foregroundColor,
-              fontSize: 15,
-              height: 1.2,
-              fontWeight: FontWeight.w800,
-            ),
-          ),
         ),
       ),
     );
