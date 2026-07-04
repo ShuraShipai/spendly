@@ -45,7 +45,7 @@ void main() {
   group('CustomCategoryService', () {
     test('saves custom categories after first use and reloads them', () async {
       const userId = 'user-1';
-      final service = CustomCategoryService();
+      final service = CustomCategoryService.memory();
       final coffee = ExpenseCategory.custom(
         label: 'Coffee',
         color: AppColors.rent,
@@ -60,7 +60,7 @@ void main() {
 
     test('updates an existing custom category with the same id', () async {
       const userId = 'user-1';
-      final service = CustomCategoryService();
+      final service = CustomCategoryService.memory();
       final original = ExpenseCategory.custom(
         label: 'Coffee',
         color: AppColors.rent,
@@ -76,6 +76,20 @@ void main() {
       final loaded = await service.loadCustomCategories(userId);
       expect(loaded, hasLength(1));
       expect(loaded.single.color, AppColors.health);
+    });
+
+    test('deletes custom categories by id', () async {
+      const userId = 'user-1';
+      final service = CustomCategoryService.memory();
+      final coffee = ExpenseCategory.custom(
+        label: 'Coffee',
+        color: AppColors.rent,
+      );
+
+      await service.saveCustomCategory(userId, coffee);
+      await service.deleteCustomCategory(userId, coffee.id);
+
+      expect(await service.loadCustomCategories(userId), isEmpty);
     });
   });
 

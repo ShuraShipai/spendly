@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/theme/app_colors.dart';
+import 'expense_deleted_progress_indicator.dart';
+
+const expenseDeletedSnackBarDuration = Duration(seconds: 5);
 
 void showExpenseDeletedSnackBar({
   required BuildContext context,
@@ -27,6 +30,7 @@ void showExpenseDeletedSnackBar({
       child: Material(
         color: Colors.transparent,
         child: ExpenseDeletedSnackBar(
+          duration: expenseDeletedSnackBarDuration,
           onUndo: () {
             onUndo();
             dismiss();
@@ -37,12 +41,17 @@ void showExpenseDeletedSnackBar({
   );
 
   overlay.insert(entry);
-  Future<void>.delayed(const Duration(milliseconds: 2800), dismiss);
+  Future<void>.delayed(expenseDeletedSnackBarDuration, dismiss);
 }
 
 class ExpenseDeletedSnackBar extends StatelessWidget {
-  const ExpenseDeletedSnackBar({required this.onUndo, super.key});
+  const ExpenseDeletedSnackBar({
+    required this.duration,
+    required this.onUndo,
+    super.key,
+  });
 
+  final Duration duration;
   final VoidCallback onUndo;
 
   @override
@@ -63,11 +72,7 @@ class ExpenseDeletedSnackBar extends StatelessWidget {
         padding: const EdgeInsets.fromLTRB(16, 13, 16, 13),
         child: Row(
           children: [
-            const Icon(
-              Icons.check_rounded,
-              color: AppColors.groceries,
-              size: 18,
-            ),
+            ExpenseDeletedProgressIndicator(duration: duration),
             const SizedBox(width: 10),
             Expanded(
               child: Text(

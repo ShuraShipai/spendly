@@ -7,10 +7,10 @@ import '../models/payment_method.dart';
 import '../services/custom_category_service.dart';
 import 'expense_provider.dart';
 
-enum AddExpenseStep { amount, details, categoryPicker, celebration }
+enum AddExpenseStep { details, amount, categoryPicker, celebration }
 
 class AddExpenseFlowController extends ChangeNotifier {
-  var step = AddExpenseStep.amount;
+  var step = AddExpenseStep.details;
   var amount = '0';
   var category = ExpenseCategory.food;
   var categories = ExpenseCategory.defaults;
@@ -20,8 +20,6 @@ class AddExpenseFlowController extends ChangeNotifier {
   ExpenseEntry? savedExpense;
   var showPaymentError = false;
   var isSavingExpense = false;
-  double? _presetKeypadBaseAmount;
-  var _presetKeypadEntry = '';
 
   Future<void> loadCustomCategories({
     required String? userId,
@@ -32,56 +30,40 @@ class AddExpenseFlowController extends ChangeNotifier {
     }
 
     final customCategories = await service.loadCustomCategories(userId);
-    categories = _mergeCategories(customCategories);
-    if (!categories.contains(category)) {
-      category = ExpenseCategory.food;
+    if (customCategories.isEmpty) {
+      return;
     }
+
+    categories = [
+      ...ExpenseCategory.defaults,
+      for (final category in customCategories)
+        if (!ExpenseCategory.defaults.any(
+          (defaultCategory) =>
+              defaultCategory.id == category.id ||
+              defaultCategory.hasSameLabel(category.label),
+        ))
+          category,
+    ];
     notifyListeners();
   }
 
   void appendAmount(String value) {
-    if (_presetKeypadBaseAmount != null) {
-      _appendPresetKeypadEntry(value);
+    final nextAmount = _appendAmountInput(amount, value);
+    if (nextAmount == amount) {
       return;
     }
-
-    if (value == '.' && amount.contains('.')) {
-      return;
-    }
-    if (amount == '0' && value != '.') {
-      amount = value;
-    } else {
-      amount += value;
-    }
+    amount = nextAmount;
     notifyListeners();
   }
 
   void addPresetAmount(int value) {
-    final currentAmount = double.tryParse(amount) ?? 0;
-    final nextAmount = currentAmount + value;
-    _presetKeypadBaseAmount = nextAmount;
-    _presetKeypadEntry = '';
-    amount = _formatAmount(nextAmount);
+    final nextAmountCents = _parseAmountCents(amount) + (value * 100);
+    amount = _formatCents(nextAmountCents);
     notifyListeners();
   }
 
   void backspaceAmount() {
-    if (_presetKeypadBaseAmount != null && _presetKeypadEntry.isNotEmpty) {
-      _presetKeypadEntry = _presetKeypadEntry.substring(
-        0,
-        _presetKeypadEntry.length - 1,
-      );
-      _syncPresetAmount();
-      notifyListeners();
-      return;
-    }
-
-    _clearPresetKeypadEntry();
-    if (amount.length <= 1) {
-      amount = '0';
-    } else {
-      amount = amount.substring(0, amount.length - 1);
-    }
+    amount = _backspaceAmountInput(amount);
     notifyListeners();
   }
 
@@ -92,7 +74,6 @@ class AddExpenseFlowController extends ChangeNotifier {
 
   void selectCategory(ExpenseCategory selectedCategory) {
     category = selectedCategory;
-    step = AddExpenseStep.details;
     notifyListeners();
   }
 
@@ -114,11 +95,10 @@ class AddExpenseFlowController extends ChangeNotifier {
       return categories[existingIndex];
     }
 
+    categories = [...categories, customCategory];
     if (userId != null && service != null) {
       await service.saveCustomCategory(userId, customCategory);
     }
-
-    categories = [...categories, customCategory];
     notifyListeners();
     return customCategory;
   }
@@ -147,6 +127,13 @@ class AddExpenseFlowController extends ChangeNotifier {
       return false;
     }
 
+    final parsedAmount = double.tryParse(amount) ?? 0;
+    if (parsedAmount <= 0) {
+      step = AddExpenseStep.amount;
+      notifyListeners();
+      return false;
+    }
+
     if (paymentMethod == null) {
       showPaymentError = true;
       notifyListeners();
@@ -157,13 +144,9 @@ class AddExpenseFlowController extends ChangeNotifier {
     notifyListeners();
 
     try {
-      if (userId != null && categoryService != null && category.isCustom) {
-        await categoryService.saveCustomCategory(userId, category);
-      }
-
       final expense = ExpenseEntry(
         id: DateTime.now().microsecondsSinceEpoch.toString(),
-        amount: double.tryParse(amount) ?? 0,
+        amount: parsedAmount,
         category: category,
         date: selectedDate,
         paymentMethod: paymentMethod!,
@@ -181,7 +164,7 @@ class AddExpenseFlowController extends ChangeNotifier {
   }
 
   void resetDraft() {
-    step = AddExpenseStep.amount;
+    step = AddExpenseStep.details;
     amount = '0';
     category = ExpenseCategory.food;
     selectedDate = DateTime.now();
@@ -190,20 +173,7 @@ class AddExpenseFlowController extends ChangeNotifier {
     savedExpense = null;
     showPaymentError = false;
     isSavingExpense = false;
-    _clearPresetKeypadEntry();
     notifyListeners();
-  }
-
-  List<ExpenseCategory> _mergeCategories(
-    Iterable<ExpenseCategory> customCategories,
-  ) {
-    final merged = [...ExpenseCategory.defaults];
-    for (final customCategory in customCategories) {
-      if (!merged.any((existing) => existing.id == customCategory.id)) {
-        merged.add(customCategory);
-      }
-    }
-    return merged;
   }
 
   Color _colorForLabel(String label) {
@@ -218,37 +188,64 @@ class AddExpenseFlowController extends ChangeNotifier {
     return customColors[label.trim().length % customColors.length];
   }
 
-  String _formatAmount(double value) {
-    if (value == value.roundToDouble()) {
-      return value.round().toString();
+  String _appendAmountInput(String currentAmount, String value) {
+    if (value == '.') {
+      if (currentAmount.contains('.')) {
+        return currentAmount;
+      }
+      return '$currentAmount.';
     }
 
-    return value.toStringAsFixed(2);
-  }
-
-  void _appendPresetKeypadEntry(String value) {
-    if (value == '.' && _presetKeypadEntry.contains('.')) {
-      return;
+    final decimalIndex = currentAmount.indexOf('.');
+    if (decimalIndex >= 0) {
+      final decimalPlaces = currentAmount.length - decimalIndex - 1;
+      if (decimalPlaces >= 2) {
+        return currentAmount;
+      }
+      return '$currentAmount$value';
     }
 
-    if (value == '.' && _presetKeypadEntry.isEmpty) {
-      _presetKeypadEntry = '0.';
-    } else {
-      _presetKeypadEntry += value;
+    if (currentAmount == '0') {
+      return value;
     }
 
-    _syncPresetAmount();
-    notifyListeners();
+    return '$currentAmount$value';
   }
 
-  void _syncPresetAmount() {
-    final baseAmount = _presetKeypadBaseAmount ?? 0;
-    final entryAmount = double.tryParse(_presetKeypadEntry) ?? 0;
-    amount = _formatAmount(baseAmount + entryAmount);
+  String _backspaceAmountInput(String currentAmount) {
+    if (currentAmount.length <= 1) {
+      return '0';
+    }
+
+    final nextAmount = currentAmount.substring(0, currentAmount.length - 1);
+    if (nextAmount.isEmpty || nextAmount == '0.') {
+      return '0';
+    }
+
+    return nextAmount;
   }
 
-  void _clearPresetKeypadEntry() {
-    _presetKeypadBaseAmount = null;
-    _presetKeypadEntry = '';
+  int _parseAmountCents(String value) {
+    final parts = value.split('.');
+    final wholePart =
+        int.tryParse(parts.first.isEmpty ? '0' : parts.first) ?? 0;
+    if (parts.length == 1) {
+      return wholePart * 100;
+    }
+
+    final decimalText = parts[1].padRight(2, '0').substring(0, 2);
+    final centsPart = int.tryParse(decimalText) ?? 0;
+    return (wholePart * 100) + centsPart;
+  }
+
+  String _formatCents(int cents) {
+    final whole = cents ~/ 100;
+    final remainder = cents % 100;
+    if (remainder == 0) {
+      return whole.toString();
+    }
+
+    final decimalText = remainder.toString().padLeft(2, '0');
+    return '$whole.${decimalText.endsWith('0') ? decimalText[0] : decimalText}';
   }
 }

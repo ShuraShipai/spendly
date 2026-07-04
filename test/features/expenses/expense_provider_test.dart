@@ -2,6 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'package:spendly/features/expenses/models/expense_category.dart';
 import 'package:spendly/features/expenses/models/expense_entry.dart';
+import 'package:spendly/features/expenses/models/expense_sort_option.dart';
 import 'package:spendly/features/expenses/models/payment_method.dart';
 import 'package:spendly/features/expenses/providers/expense_provider.dart';
 
@@ -96,6 +97,50 @@ void main() {
       provider.restoreExpense(expense);
 
       expect(provider.expenses, [expense]);
+    });
+
+    test('derives visible sorted expenses and day groups', () {
+      final provider = ExpenseProvider();
+      final coffee = ExpenseEntry(
+        id: 'coffee',
+        amount: 120,
+        category: ExpenseCategory.food,
+        date: DateTime(2026, 7, 2),
+        paymentMethod: PaymentMethod.upi,
+        note: 'Coffee',
+      );
+      final rent = ExpenseEntry(
+        id: 'rent',
+        amount: 8500,
+        category: ExpenseCategory.rent,
+        date: DateTime(2026, 7, 1),
+        paymentMethod: PaymentMethod.card,
+      );
+
+      provider.addExpense(coffee);
+      provider.addExpense(rent);
+
+      final visible = provider.visibleExpenses(
+        query: 'coffee',
+        sortOption: ExpenseSortOption.highestAmount,
+        selectedPaymentMethods: {PaymentMethod.upi},
+        minAmount: 0,
+        maxAmount: 2000,
+      );
+
+      expect(visible, [coffee]);
+      expect(
+        provider.filterLabels(
+          selectedCategoryIds: {ExpenseCategory.food.id},
+          selectedPaymentMethods: {PaymentMethod.upi},
+        ),
+        ['Food', 'UPI'],
+      );
+
+      final groups = provider.groupByDay(provider.expenses);
+      expect(groups, hasLength(2));
+      expect(groups.first.date, DateTime(2026, 7, 2));
+      expect(groups.first.total, 120);
     });
   });
 }

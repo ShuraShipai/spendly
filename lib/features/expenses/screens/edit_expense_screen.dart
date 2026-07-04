@@ -29,6 +29,7 @@ class _EditExpenseScreenState extends State<EditExpenseScreen> {
   late DateTime _date;
   late PaymentMethod _paymentMethod;
   var _loaded = false;
+  String? _amountError;
 
   @override
   void didChangeDependencies() {
@@ -96,7 +97,15 @@ class _EditExpenseScreenState extends State<EditExpenseScreen> {
               onSave: () => _save(expense.id),
             ),
             const SizedBox(height: AppSpacing.lg),
-            EditAmountEditor(controller: _amountController),
+            EditAmountEditor(
+              controller: _amountController,
+              errorText: _amountError,
+              onChanged: (_) {
+                if (_amountError != null) {
+                  setState(() => _amountError = null);
+                }
+              },
+            ),
             const SizedBox(height: AppSpacing.lg),
             const SectionLabel('CATEGORY'),
             const SizedBox(height: AppSpacing.xs),
@@ -183,23 +192,30 @@ class _EditExpenseScreenState extends State<EditExpenseScreen> {
   }
 
   void _save(String expenseId) {
-    final expense = context.read<ExpenseProvider>().expenseById(expenseId);
+    final expenseProvider = context.read<ExpenseProvider>();
+    final navigator = Navigator.of(context);
+    final expense = expenseProvider.expenseById(expenseId);
     if (expense == null) {
       return;
     }
 
-    final amount = double.tryParse(_amountController.text.trim()) ?? 0;
+    final amount = double.tryParse(_amountController.text.trim());
+    if (amount == null || amount <= 0) {
+      setState(() => _amountError = 'Enter an amount greater than ₹0');
+      return;
+    }
+
     final note = _noteController.text.trim();
-    context.read<ExpenseProvider>().updateExpense(
-      expense.copyWith(
-        amount: amount,
-        category: _category,
-        date: _date,
-        paymentMethod: _paymentMethod,
-        note: note.isEmpty ? null : note,
-      ),
+    final updatedExpense = expense.copyWith(
+      amount: amount,
+      category: _category,
+      date: _date,
+      paymentMethod: _paymentMethod,
+      note: note.isEmpty ? null : note,
     );
-    Navigator.of(context).pop();
+
+    navigator.popUntil((route) => route.isFirst);
+    expenseProvider.updateExpense(updatedExpense);
   }
 
   InputDecoration _fieldDecoration(BuildContext context, String hintText) {

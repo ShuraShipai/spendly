@@ -111,15 +111,6 @@ class _AddExpenseFlowSheetState extends State<AddExpenseFlowSheet> {
         return AnimatedSwitcher(
           duration: const Duration(milliseconds: 220),
           child: switch (_controller.step) {
-            AddExpenseStep.amount => AmountKeypadStep(
-              key: const ValueKey('amount'),
-              amount: _controller.amount,
-              onClose: () => Navigator.of(context).pop(),
-              onKeyPressed: _controller.appendAmount,
-              onPresetAmountPressed: _controller.addPresetAmount,
-              onBackspace: _controller.backspaceAmount,
-              onNext: () => _controller.goTo(AddExpenseStep.details),
-            ),
             AddExpenseStep.details => ExpenseDetailsStep(
               key: const ValueKey('details'),
               amount: _controller.amount,
@@ -132,6 +123,7 @@ class _AddExpenseFlowSheetState extends State<AddExpenseFlowSheet> {
               isSaving: _controller.isSavingExpense,
               onClose: () => Navigator.of(context).pop(),
               onBack: () => _controller.goTo(AddExpenseStep.amount),
+              onAmountPressed: () => _controller.goTo(AddExpenseStep.amount),
               onCategoryChanged: _controller.selectCategory,
               onAddCategory: () =>
                   _controller.goTo(AddExpenseStep.categoryPicker),
@@ -140,12 +132,25 @@ class _AddExpenseFlowSheetState extends State<AddExpenseFlowSheet> {
               onPaymentMethodChanged: _controller.setPaymentMethod,
               onSave: _saveExpense,
             ),
+            AddExpenseStep.amount => AmountKeypadStep(
+              key: const ValueKey('amount'),
+              amount: _controller.amount,
+              categoryLabel: _controller.category.label,
+              onClose: () => _controller.goTo(AddExpenseStep.details),
+              onKeyPressed: _controller.appendAmount,
+              onPresetAmountPressed: _controller.addPresetAmount,
+              onBackspace: _controller.backspaceAmount,
+              onNext: () => _controller.goTo(AddExpenseStep.details),
+            ),
             AddExpenseStep.categoryPicker => CategoryPickerStep(
               key: const ValueKey('category-picker'),
               categories: _controller.categories,
               selectedCategory: _controller.category,
               onBack: () => _controller.goTo(AddExpenseStep.details),
-              onCategorySelected: _controller.selectCategory,
+              onCategorySelected: (category) {
+                _controller.selectCategory(category);
+                _controller.goTo(AddExpenseStep.details);
+              },
               onCreateCategory: (label) {
                 return _controller.createCustomCategory(
                   label: label,

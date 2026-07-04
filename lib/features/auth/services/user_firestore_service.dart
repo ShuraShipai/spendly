@@ -26,4 +26,8 @@ class UserFirestoreService {
         .doc(user.uid)
         .set(user.toCreateMap(), SetOptions(merge: true));
   }
+
+  Future<void> deleteUser(String uid) {
+    return _users.doc(uid).delete();
+  }
 }

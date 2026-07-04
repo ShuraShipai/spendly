@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:provider/provider.dart';
 
 import '../../../core/theme/app_spacing.dart';
@@ -15,20 +14,21 @@ import '../widgets/period_selector.dart';
 import '../widgets/period_spend_card.dart';
 import '../widgets/recent_expenses_list.dart';
 
-class HomeScreen extends ConsumerStatefulWidget {
+class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
   @override
-  ConsumerState<HomeScreen> createState() => _HomeScreenState();
+  State<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends ConsumerState<HomeScreen> {
+class _HomeScreenState extends State<HomeScreen> {
   var _showEmailBanner = true;
 
   @override
   Widget build(BuildContext context) {
     final authProvider = context.watch<AuthProvider>();
     final expenseProvider = context.watch<ExpenseProvider>();
+    final dashboardState = context.watch<DashboardPeriodProvider>();
     final user = authProvider.user;
     final displayName = user?.displayName;
     final firstName = displayName == null || displayName.isEmpty
@@ -37,7 +37,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final greeting = firstName == null ? 'Hi there' : 'Hi $firstName';
     final shouldShowEmailBanner =
         _showEmailBanner && !authProvider.isEmailVerified;
-    final selectedPeriod = ref.watch(dashboardPeriodProvider);
+    final selectedPeriod = dashboardState.selectedPeriod;
     final referenceDate = DateTime.now();
     final dashboardExpenses = _expensesForPeriod(
       expenseProvider,
@@ -75,7 +75,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           PeriodSelector(
             selectedPeriod: selectedPeriod,
             onPeriodSelected: (period) {
-              ref.read(dashboardPeriodProvider.notifier).state = period;
+              context.read<DashboardPeriodProvider>().setSelectedPeriod(period);
             },
           ),
           const SizedBox(height: AppSpacing.xl),
