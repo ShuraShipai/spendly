@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../../core/theme/app_colors.dart';
-import '../../../core/theme/app_spacing.dart';
+import '../../../core/widgets/app_primary_button.dart';
 
 class MintActionButton extends StatelessWidget {
   const MintActionButton({
@@ -17,42 +16,9 @@ class MintActionButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      width: double.infinity,
-      child: DecoratedBox(
-        decoration: BoxDecoration(
-          color: isEnabled
-              ? AppColors.mint
-              : AppColors.mint.withValues(alpha: 0.45),
-          borderRadius: BorderRadius.circular(17),
-          boxShadow: isEnabled
-              ? const [
-                  BoxShadow(
-                    color: Color(0x6634C6A8),
-                    blurRadius: 20,
-                    offset: Offset(0, 8),
-                  ),
-                ]
-              : null,
-        ),
-        child: Material(
-          color: Colors.transparent,
-          child: InkWell(
-            onTap: isEnabled ? onPressed : null,
-            borderRadius: BorderRadius.circular(17),
-            child: Padding(
-              padding: const EdgeInsets.all(AppSpacing.md),
-              child: Text(
-                label,
-                style: Theme.of(
-                  context,
-                ).textTheme.labelLarge?.copyWith(color: Colors.white),
-                textAlign: TextAlign.center,
-              ),
-            ),
-          ),
-        ),
-      ),
+    return AppPrimaryButton(
+      label: label,
+      onPressed: isEnabled ? onPressed : null,
     );
   }
 }

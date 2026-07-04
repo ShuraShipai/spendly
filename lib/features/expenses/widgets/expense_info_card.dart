@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/theme/app_colors.dart';
-import '../../../core/theme/app_spacing.dart';
 import '../models/expense_entry.dart';
+import 'expense_info_row.dart';
 
 class ExpenseInfoCard extends StatelessWidget {
   const ExpenseInfoCard({required this.expense, super.key});
@@ -23,14 +23,14 @@ class ExpenseInfoCard extends StatelessWidget {
       ),
       child: Column(
         children: [
-          _InfoRow(
+          ExpenseInfoRow(
             label: 'Category',
             value: expense.category.label,
             color: expense.category.color,
           ),
-          _InfoRow(label: 'Date', value: expense.dateLabel),
-          _InfoRow(label: 'Payment', value: expense.paymentMethod.label),
-          _InfoRow(
+          ExpenseInfoRow(label: 'Date', value: expense.dateLabel),
+          ExpenseInfoRow(label: 'Payment', value: expense.paymentMethod.label),
+          ExpenseInfoRow(
             label: 'Note',
             value: expense.note?.trim().isEmpty ?? true
                 ? '-'
@@ -38,63 +38,6 @@ class ExpenseInfoCard extends StatelessWidget {
             isLast: true,
           ),
         ],
-      ),
-    );
-  }
-}
-
-class _InfoRow extends StatelessWidget {
-  const _InfoRow({
-    required this.label,
-    required this.value,
-    this.color,
-    this.isLast = false,
-  });
-
-  final String label;
-  final String value;
-  final Color? color;
-  final bool isLast;
-
-  @override
-  Widget build(BuildContext context) {
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        border: isLast
-            ? null
-            : const Border(bottom: BorderSide(color: AppColors.line)),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(
-          horizontal: AppSpacing.md,
-          vertical: AppSpacing.sm,
-        ),
-        child: Row(
-          children: [
-            Expanded(
-              child: Text(
-                label,
-                style: Theme.of(
-                  context,
-                ).textTheme.bodySmall?.copyWith(color: AppColors.inkSubtle),
-              ),
-            ),
-            if (color != null) ...[
-              DecoratedBox(
-                decoration: BoxDecoration(color: color, shape: BoxShape.circle),
-                child: const SizedBox.square(dimension: 9),
-              ),
-              const SizedBox(width: AppSpacing.xs),
-            ],
-            Flexible(
-              child: Text(
-                value,
-                style: Theme.of(context).textTheme.labelMedium,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
-          ],
-        ),
       ),
     );
   }

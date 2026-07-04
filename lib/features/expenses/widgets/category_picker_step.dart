@@ -3,8 +3,8 @@ import 'package:flutter/material.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../models/expense_category.dart';
-import 'category_list_row.dart';
-import 'custom_category_name_dialog.dart';
+import 'category_add_tile.dart';
+import 'category_picker_tile.dart';
 import 'expense_sheet_frame.dart';
 import 'expense_sheet_header.dart';
 import 'mint_action_button.dart';
@@ -31,14 +31,12 @@ class CategoryPickerStep extends StatefulWidget {
 
 class _CategoryPickerStepState extends State<CategoryPickerStep> {
   final _searchController = TextEditingController();
-  final _listController = ScrollController();
   var _query = '';
-  var _creating = false;
+  late var _selectedCategory = widget.selectedCategory;
 
   @override
   void dispose() {
     _searchController.dispose();
-    _listController.dispose();
     super.dispose();
   }
 
@@ -55,40 +53,26 @@ class _CategoryPickerStepState extends State<CategoryPickerStep> {
         .toList();
   }
 
-  Future<void> _createCategory(String label) async {
-    if (label.isEmpty || _creating) {
+  bool get _canAddSearchCategory {
+    final normalizedQuery = _query.trim();
+    if (normalizedQuery.isEmpty) {
+      return false;
+    }
+
+    return _matchingCategoryFor(normalizedQuery) == null;
+  }
+
+  Future<void> _createSearchCategory() async {
+    final label = _query.trim();
+    if (label.isEmpty) {
       return;
     }
 
-    setState(() => _creating = true);
     final category = await widget.onCreateCategory(label);
     if (!mounted) {
       return;
     }
-    widget.onCategorySelected(category);
-  }
-
-  Future<void> _handleAddCategory() async {
-    final label = await showDialog<String>(
-      context: context,
-      builder: (context) {
-        return const CustomCategoryNameDialog();
-      },
-    );
-
-    if (!mounted || label == null) {
-      return;
-    }
-
-    final matchingCategory = _matchingCategoryFor(label);
-    if (matchingCategory != null) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Category already exists.')));
-      return;
-    }
-
-    await _createCategory(label.trim());
+    setState(() => _selectedCategory = category);
   }
 
   ExpenseCategory? _matchingCategoryFor(String label) {
@@ -143,37 +127,40 @@ class _CategoryPickerStepState extends State<CategoryPickerStep> {
           ),
           const SizedBox(height: AppSpacing.md),
           Expanded(
-            child: Scrollbar(
-              controller: _listController,
-              thumbVisibility: true,
-              child: ListView.separated(
-                controller: _listController,
-                padding: const EdgeInsets.only(
-                  right: AppSpacing.xs,
-                  bottom: AppSpacing.lg,
-                ),
-                physics: const BouncingScrollPhysics(
-                  parent: AlwaysScrollableScrollPhysics(),
-                ),
-                itemCount: filteredCategories.length,
-                separatorBuilder: (_, _) =>
-                    const SizedBox(height: AppSpacing.xs),
-                itemBuilder: (context, index) {
-                  final category = filteredCategories[index];
-                  return CategoryListRow(
-                    category: category,
-                    selected: category == widget.selectedCategory,
-                    onTap: () => widget.onCategorySelected(category),
-                  );
-                },
+            child: GridView.builder(
+              padding: const EdgeInsets.only(bottom: AppSpacing.lg),
+              physics: const BouncingScrollPhysics(
+                parent: AlwaysScrollableScrollPhysics(),
               ),
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 3,
+                mainAxisSpacing: 14,
+                crossAxisSpacing: 8,
+                childAspectRatio: 0.86,
+              ),
+              itemCount:
+                  filteredCategories.length + (_canAddSearchCategory ? 1 : 0),
+              itemBuilder: (context, index) {
+                if (index == filteredCategories.length) {
+                  return CategoryAddTile(
+                    label: '+ ${_query.trim()}',
+                    onTap: _createSearchCategory,
+                  );
+                }
+
+                final category = filteredCategories[index];
+                return CategoryPickerTile(
+                  category: category,
+                  selected: category == _selectedCategory,
+                  onTap: () => setState(() => _selectedCategory = category),
+                );
+              },
             ),
           ),
           const SizedBox(height: AppSpacing.sm),
           MintActionButton(
-            label: _creating ? 'Creating...' : '+ Add Category',
-            onPressed: _handleAddCategory,
-            isEnabled: !_creating,
+            label: 'Confirm',
+            onPressed: () => widget.onCategorySelected(_selectedCategory),
           ),
         ],
       ),

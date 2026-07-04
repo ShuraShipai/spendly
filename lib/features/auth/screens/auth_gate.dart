@@ -2,12 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../../core/theme/app_colors.dart';
-import '../../home/screens/main_navigation_screen.dart';
 import '../providers/auth_provider.dart';
 import 'welcome_screen.dart';
 
 class AuthGate extends StatelessWidget {
-  const AuthGate({super.key});
+  const AuthGate({required this.authenticatedBuilder, super.key});
+
+  final WidgetBuilder authenticatedBuilder;
 
   @override
   Widget build(BuildContext context) {
@@ -16,7 +17,7 @@ class AuthGate extends StatelessWidget {
     return switch (authProvider.status) {
       AuthStatus.unknown => const _AuthLoadingScreen(),
       AuthStatus.unauthenticated => const WelcomeScreen(),
-      AuthStatus.authenticated => const MainNavigationScreen(),
+      AuthStatus.authenticated => authenticatedBuilder(context),
     };
   }
 }

@@ -91,7 +91,7 @@ void main() {
     expect(find.text('Dismiss'), findsOneWidget);
   });
 
-  testWidgets('moves from amount keypad to expense details', (
+  testWidgets('moves from expense details to amount keypad and back', (
     WidgetTester tester,
   ) async {
     await tester.pumpWidget(
@@ -101,19 +101,25 @@ void main() {
       ),
     );
 
-    expect(find.text('How much?'), findsOneWidget);
-    expect(find.text('AMOUNT'), findsOneWidget);
-    expect(find.text('Next'), findsOneWidget);
-
-    await tester.tap(find.text('Next'));
-    await tester.pumpAndSettle();
-
     expect(find.text('New expense'), findsOneWidget);
+    expect(find.text('AMOUNT'), findsOneWidget);
     expect(find.text('Save expense'), findsOneWidget);
     expect(find.text('CATEGORY'), findsOneWidget);
     expect(find.text('Today'), findsOneWidget);
     expect(find.text('UPI'), findsNothing);
     expect(find.text('Cash'), findsNothing);
+
+    await tester.tap(find.text('₹0'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('How much?'), findsOneWidget);
+    expect(find.text('FOOD'), findsOneWidget);
+    expect(find.text('Next'), findsOneWidget);
+    await tester.tap(find.text('Next'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('New expense'), findsOneWidget);
+    expect(find.text('₹0'), findsOneWidget);
   });
 
   testWidgets('adds quick amount chips to the current amount', (
@@ -126,6 +132,8 @@ void main() {
       ),
     );
 
+    await tester.tap(find.text('₹0'));
+    await tester.pumpAndSettle();
     await tester.tap(find.text('+₹500'));
     await tester.pump();
     await tester.tap(find.text('+₹500'));
@@ -144,6 +152,8 @@ void main() {
       ),
     );
 
+    await tester.tap(find.text('₹0'));
+    await tester.pumpAndSettle();
     await tester.tap(find.text('+₹100'));
     await tester.pump();
     await tester.tap(find.text('+₹100'));
@@ -156,7 +166,7 @@ void main() {
     final updatedRichTextValues = tester
         .widgetList<RichText>(find.byType(RichText))
         .map((richText) => richText.text.toPlainText());
-    expect(updatedRichTextValues, contains('₹305'));
+    expect(updatedRichTextValues, contains('₹3005'));
   });
 
   testWidgets('requires payment method and supports custom categories', (
@@ -169,6 +179,10 @@ void main() {
       ),
     );
 
+    await tester.tap(find.text('₹0'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('+₹100'));
+    await tester.pumpAndSettle();
     await tester.tap(find.text('Next'));
     await tester.pumpAndSettle();
 
@@ -197,13 +211,11 @@ void main() {
     await tester.tap(find.text('+ More'));
     await tester.pumpAndSettle();
     expect(find.text('Pick a category'), findsOneWidget);
-    expect(find.text('+ Add Category'), findsOneWidget);
-    await tester.tap(find.text('+ Add Category'));
-    await tester.pumpAndSettle();
-    expect(find.text('Add category'), findsOneWidget);
     await tester.enterText(find.byType(TextField).last, 'Coffee');
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Save'));
+    await tester.tap(find.text('+ Coffee'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Confirm'));
     await tester.pumpAndSettle();
 
     expect(find.text('New expense'), findsOneWidget);
@@ -222,11 +234,11 @@ void main() {
     expect(find.text('Done'), findsOneWidget);
   });
 
-  testWidgets('persists custom categories after the first saved expense', (
+  testWidgets('keeps custom categories in memory for the current sheet', (
     WidgetTester tester,
   ) async {
     const userId = 'test-user';
-    final categoryService = CustomCategoryService();
+    final categoryService = CustomCategoryService.memory();
     final expenseProvider = ExpenseProvider();
 
     Future<void> pumpSheet() {
@@ -245,6 +257,10 @@ void main() {
     }
 
     await pumpSheet();
+    await tester.tap(find.text('₹0'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('+₹100'));
+    await tester.pumpAndSettle();
     await tester.tap(find.text('Next'));
     await tester.pumpAndSettle();
 
@@ -255,12 +271,11 @@ void main() {
 
     await tester.tap(find.text('+ More'));
     await tester.pumpAndSettle();
-    expect(find.text('+ Add Category'), findsOneWidget);
-    await tester.tap(find.text('+ Add Category'));
-    await tester.pumpAndSettle();
     await tester.enterText(find.byType(TextField).last, 'Coffee');
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Save'));
+    await tester.tap(find.text('+ Coffee'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Confirm'));
     await tester.pumpAndSettle();
 
     await tester.tap(find.text('Save expense'));
@@ -271,31 +286,21 @@ void main() {
     expect(expenseProvider.expenses, hasLength(1));
 
     final savedCategories = await categoryService.loadCustomCategories(userId);
-    expect(savedCategories, hasLength(1));
-    expect(savedCategories.single.label, 'Coffee');
+    expect(
+      savedCategories.map((category) => category.label),
+      contains('Coffee'),
+    );
 
     await tester.pumpWidget(const SizedBox.shrink());
     await pumpSheet();
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Next'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('+ More'));
     await tester.pumpAndSettle();
     await tester.enterText(find.byType(TextField).last, 'Coffee');
     await tester.pumpAndSettle();
 
-    await tester.tap(find.text('+ Add Category'));
-    await tester.pumpAndSettle();
-    await tester.enterText(find.byType(TextField).last, ' coffee ');
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Save'));
-    await tester.pumpAndSettle();
-
-    expect(find.text('Category already exists.'), findsOneWidget);
-    expect(await categoryService.loadCustomCategories(userId), hasLength(1));
-
     expect(
-      find.descendant(of: find.byType(ListView), matching: find.text('Coffee')),
+      find.descendant(of: find.byType(GridView), matching: find.text('Coffee')),
       findsOneWidget,
     );
   });

@@ -119,6 +119,20 @@ class AuthProvider extends ChangeNotifier {
     await _runAuthTask(_authService.signOut);
   }
 
+  Future<void> deleteAccount() async {
+    final uid = _user?.uid;
+    if (uid == null) {
+      _errorMessage = 'No signed-in account found.';
+      notifyListeners();
+      return;
+    }
+
+    await _runAuthTask(() async {
+      await _userFirestoreService.deleteUser(uid);
+      await _authService.deleteCurrentUser();
+    });
+  }
+
   void clearError() {
     if (_errorMessage == null) {
       return;
@@ -189,6 +203,8 @@ class AuthProvider extends ChangeNotifier {
         return 'Check your connection and try again.';
       case 'too-many-requests':
         return 'Too many attempts. Try again later.';
+      case 'requires-recent-login':
+        return 'Sign in again before deleting your account.';
       case 'expired-action-code':
         return 'This reset link has expired.';
       case 'invalid-action-code':

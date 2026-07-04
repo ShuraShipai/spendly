@@ -11,7 +11,7 @@ class ExpenseEntry {
     required this.date,
     required this.paymentMethod,
     this.note,
-  });
+  }) : assert(amount > 0, 'Expense amount must be greater than zero.');
 
   final String id;
   final double amount;

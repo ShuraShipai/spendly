@@ -11,6 +11,7 @@ import 'number_pad.dart';
 class AmountKeypadStep extends StatelessWidget {
   const AmountKeypadStep({
     required this.amount,
+    required this.categoryLabel,
     required this.onClose,
     required this.onKeyPressed,
     required this.onPresetAmountPressed,
@@ -20,6 +21,7 @@ class AmountKeypadStep extends StatelessWidget {
   });
 
   final String amount;
+  final String categoryLabel;
   final VoidCallback onClose;
   final ValueChanged<String> onKeyPressed;
   final ValueChanged<int> onPresetAmountPressed;
@@ -41,7 +43,7 @@ class AmountKeypadStep extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Text(
-                  'AMOUNT',
+                  categoryLabel.toUpperCase(),
                   style: Theme.of(
                     context,
                   ).textTheme.labelMedium?.copyWith(color: AppColors.inkSubtle),

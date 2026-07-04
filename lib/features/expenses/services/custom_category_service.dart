@@ -5,7 +5,10 @@ import '../constants/expense_constants.dart';
 import '../models/expense_category.dart';
 
 class CustomCategoryService {
-  CustomCategoryService({this.firestore});
+  CustomCategoryService({FirebaseFirestore? firestore})
+    : firestore = firestore ?? FirebaseFirestore.instance;
+
+  CustomCategoryService.memory() : firestore = null;
 
   final FirebaseFirestore? firestore;
   final Map<String, List<ExpenseCategory>> _memoryStore = {};
@@ -57,5 +60,18 @@ class CustomCategoryService {
     await _customCategories(
       uid,
     ).doc(category.id).set(category.toMap(), SetOptions(merge: true));
+  }
+
+  Future<void> deleteCustomCategory(String uid, String categoryId) async {
+    if (_usesMemory) {
+      final categories = _memoryStore[uid];
+      if (categories == null) {
+        return;
+      }
+      categories.removeWhere((category) => category.id == categoryId);
+      return;
+    }
+
+    await _customCategories(uid).doc(categoryId).delete();
   }
 }

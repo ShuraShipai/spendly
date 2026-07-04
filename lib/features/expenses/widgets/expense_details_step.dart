@@ -26,6 +26,7 @@ class ExpenseDetailsStep extends StatelessWidget {
     required this.isSaving,
     required this.onClose,
     required this.onBack,
+    required this.onAmountPressed,
     required this.onCategoryChanged,
     required this.onAddCategory,
     required this.onDatePressed,
@@ -45,6 +46,7 @@ class ExpenseDetailsStep extends StatelessWidget {
   final bool isSaving;
   final VoidCallback onClose;
   final VoidCallback onBack;
+  final VoidCallback onAmountPressed;
   final ValueChanged<ExpenseCategory> onCategoryChanged;
   final VoidCallback onAddCategory;
   final VoidCallback onDatePressed;
@@ -69,7 +71,7 @@ class ExpenseDetailsStep extends StatelessWidget {
             onLeadingPressed: onClose,
           ),
           const SizedBox(height: AppSpacing.md),
-          AmountCard(amount: amount),
+          AmountCard(amount: amount, onTap: onAmountPressed),
           const SizedBox(height: AppSpacing.lg),
           const SectionLabel('CATEGORY'),
           const SizedBox(height: AppSpacing.xs),

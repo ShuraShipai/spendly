@@ -3,9 +3,14 @@ import 'package:flutter/material.dart';
 import 'expense_header_icon_box.dart';
 
 class ExpenseDetailHeader extends StatelessWidget {
-  const ExpenseDetailHeader({required this.onBack, super.key});
+  const ExpenseDetailHeader({
+    required this.onBack,
+    required this.onMore,
+    super.key,
+  });
 
   final VoidCallback onBack;
+  final VoidCallback onMore;
 
   @override
   Widget build(BuildContext context) {
@@ -19,7 +24,7 @@ class ExpenseDetailHeader extends StatelessWidget {
             textAlign: TextAlign.center,
           ),
         ),
-        const SizedBox.square(dimension: 34),
+        ExpenseHeaderIconBox(icon: Icons.more_vert_rounded, onTap: onMore),
       ],
     );
   }

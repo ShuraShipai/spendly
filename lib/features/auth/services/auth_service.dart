@@ -66,4 +66,13 @@ class AuthService {
   Future<void> signOut() {
     return _firebaseAuth.signOut();
   }
+
+  Future<void> deleteCurrentUser() async {
+    final user = _firebaseAuth.currentUser;
+    if (user == null) {
+      throw firebase_auth.FirebaseAuthException(code: 'user-not-found');
+    }
+
+    await user.delete();
+  }
 }

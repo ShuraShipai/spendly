@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../../app/app_routes.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../models/expense_entry.dart';
 import '../providers/expense_provider.dart';
@@ -11,7 +12,6 @@ import '../widgets/expense_detail_header.dart';
 import '../widgets/expense_hero_amount.dart';
 import '../widgets/expense_info_card.dart';
 import '../widgets/mint_action_button.dart';
-import 'edit_expense_screen.dart';
 
 class ExpenseDetailScreen extends StatelessWidget {
   const ExpenseDetailScreen({required this.expenseId, super.key});
@@ -36,7 +36,10 @@ class ExpenseDetailScreen extends StatelessWidget {
           ),
           child: Column(
             children: [
-              ExpenseDetailHeader(onBack: () => Navigator.of(context).pop()),
+              ExpenseDetailHeader(
+                onBack: () => Navigator.of(context).pop(),
+                onMore: () => _confirmAndDeleteExpense(context, expense),
+              ),
               const SizedBox(height: AppSpacing.xl),
               ExpenseHeroAmount(expense: expense),
               const SizedBox(height: AppSpacing.xl),
@@ -48,11 +51,9 @@ class ExpenseDetailScreen extends StatelessWidget {
                     child: MintActionButton(
                       label: 'Edit',
                       onPressed: () {
-                        Navigator.of(context).push(
-                          MaterialPageRoute<void>(
-                            builder: (_) =>
-                                EditExpenseScreen(expenseId: expense.id),
-                          ),
+                        Navigator.of(context).pushNamed(
+                          AppRoutes.editExpense,
+                          arguments: expense.id,
                         );
                       },
                     ),

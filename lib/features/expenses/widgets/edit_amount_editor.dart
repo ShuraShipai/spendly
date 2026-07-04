@@ -1,12 +1,20 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
 
 class EditAmountEditor extends StatelessWidget {
-  const EditAmountEditor({required this.controller, super.key});
+  const EditAmountEditor({
+    required this.controller,
+    required this.onChanged,
+    this.errorText,
+    super.key,
+  });
 
   final TextEditingController controller;
+  final ValueChanged<String> onChanged;
+  final String? errorText;
 
   @override
   Widget build(BuildContext context) {
@@ -37,12 +45,19 @@ class EditAmountEditor extends StatelessWidget {
             ),
             TextField(
               controller: controller,
+              onChanged: onChanged,
               keyboardType: const TextInputType.numberWithOptions(
                 decimal: true,
               ),
+              inputFormatters: [
+                FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d{0,2}')),
+              ],
               textAlign: TextAlign.center,
               style: Theme.of(context).textTheme.displaySmall,
-              decoration: const InputDecoration(prefixText: '₹'),
+              decoration: InputDecoration(
+                prefixText: '₹',
+                errorText: errorText,
+              ),
             ),
           ],
         ),

@@ -1,6 +1,7 @@
 enum PaymentMethod {
+  cash('Cash'),
   upi('UPI'),
-  cash('Cash');
+  card('Card');
 
   const PaymentMethod(this.label);
 

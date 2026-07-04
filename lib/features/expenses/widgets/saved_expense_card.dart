@@ -11,9 +11,11 @@ class SavedExpenseCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return DecoratedBox(
       decoration: BoxDecoration(
-        color: AppColors.card,
+        color: isDark ? AppColors.darkSurface : AppColors.card,
         borderRadius: BorderRadius.circular(18),
         boxShadow: const [
           BoxShadow(

@@ -12,17 +12,26 @@ class DeleteExpenseConfirmationSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final textTheme = Theme.of(context).textTheme;
+    final sheetColor = isDark ? AppColors.darkSurface : AppColors.card;
+    final keepColor = isDark
+        ? AppColors.darkBackground
+        : const Color(0xFFF2EEE8);
+    final titleColor = isDark ? AppColors.darkInk : AppColors.ink;
+    final descriptionColor = isDark
+        ? AppColors.darkInkMuted
+        : AppColors.inkMuted;
 
     return SafeArea(
       top: false,
       child: Container(
         margin: const EdgeInsets.symmetric(horizontal: 12),
         padding: const EdgeInsets.fromLTRB(22, 24, 22, 16),
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-          boxShadow: [
+        decoration: BoxDecoration(
+          color: sheetColor,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+          boxShadow: const [
             BoxShadow(
               color: Color(0x1F000000),
               blurRadius: 30,
@@ -41,7 +50,7 @@ class DeleteExpenseConfirmationSheet extends StatelessWidget {
                 fontSize: 19,
                 height: 1.2,
                 fontWeight: FontWeight.w900,
-                color: AppColors.ink,
+                color: titleColor,
               ),
               textAlign: TextAlign.center,
             ),
@@ -52,7 +61,7 @@ class DeleteExpenseConfirmationSheet extends StatelessWidget {
                 fontSize: 13,
                 height: 1.5,
                 fontWeight: FontWeight.w600,
-                color: AppColors.inkMuted,
+                color: descriptionColor,
               ),
               textAlign: TextAlign.center,
             ),
@@ -62,8 +71,8 @@ class DeleteExpenseConfirmationSheet extends StatelessWidget {
                 Expanded(
                   child: DeleteExpenseSheetActionButton(
                     label: 'Keep',
-                    foregroundColor: AppColors.inkMuted,
-                    backgroundColor: const Color(0xFFF2EEE8),
+                    foregroundColor: descriptionColor,
+                    backgroundColor: keepColor,
                     onPressed: () => Navigator.of(context).pop(false),
                   ),
                 ),
