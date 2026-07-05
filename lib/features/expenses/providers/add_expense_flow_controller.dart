@@ -48,7 +48,7 @@ class AddExpenseFlowController extends ChangeNotifier {
   }
 
   void appendAmount(String value) {
-    final nextAmount = _appendAmountInput(amount, value);
+    final nextAmount = _appendAmountInput(value);
     if (nextAmount == amount) {
       return;
     }
@@ -57,7 +57,8 @@ class AddExpenseFlowController extends ChangeNotifier {
   }
 
   void addPresetAmount(int value) {
-    final nextAmountCents = _parseAmountCents(amount) + (value * 100);
+    final currentAmountCents = _parseAmountCents(amount) ?? 0;
+    final nextAmountCents = currentAmountCents + (value * 100);
     amount = _formatCents(nextAmountCents);
     notifyListeners();
   }
@@ -127,7 +128,7 @@ class AddExpenseFlowController extends ChangeNotifier {
       return false;
     }
 
-    final parsedAmount = double.tryParse(amount) ?? 0;
+    final parsedAmount = _parseAmount(amount) ?? 0;
     if (parsedAmount <= 0) {
       step = AddExpenseStep.amount;
       notifyListeners();
@@ -188,7 +189,15 @@ class AddExpenseFlowController extends ChangeNotifier {
     return customColors[label.trim().length % customColors.length];
   }
 
-  String _appendAmountInput(String currentAmount, String value) {
+  String _appendAmountInput(String value) {
+    if (!_isAmountInputToken(value)) {
+      return amount;
+    }
+
+    return _appendNumericInput(amount, value);
+  }
+
+  String _appendNumericInput(String currentAmount, String value) {
     if (value == '.') {
       if (currentAmount.contains('.')) {
         return currentAmount;
@@ -213,6 +222,10 @@ class AddExpenseFlowController extends ChangeNotifier {
   }
 
   String _backspaceAmountInput(String currentAmount) {
+    return _removeLastNumericToken(currentAmount);
+  }
+
+  String _removeLastNumericToken(String currentAmount) {
     if (currentAmount.length <= 1) {
       return '0';
     }
@@ -225,7 +238,19 @@ class AddExpenseFlowController extends ChangeNotifier {
     return nextAmount;
   }
 
-  int _parseAmountCents(String value) {
+  double? _parseAmount(String value) {
+    if (!_isValidAmountText(value) || value.endsWith('.')) {
+      return null;
+    }
+
+    return double.tryParse(value);
+  }
+
+  int? _parseAmountCents(String value) {
+    if (!_isValidAmountText(value)) {
+      return null;
+    }
+
     final parts = value.split('.');
     final wholePart =
         int.tryParse(parts.first.isEmpty ? '0' : parts.first) ?? 0;
@@ -247,5 +272,14 @@ class AddExpenseFlowController extends ChangeNotifier {
 
     final decimalText = remainder.toString().padLeft(2, '0');
     return '$whole.${decimalText.endsWith('0') ? decimalText[0] : decimalText}';
+  }
+
+  bool _isAmountInputToken(String value) {
+    return value.length == 1 &&
+        (RegExp(r'^\d$').hasMatch(value) || value == '.');
+  }
+
+  bool _isValidAmountText(String value) {
+    return RegExp(r'^\d+(\.\d{0,2})?$').hasMatch(value);
   }
 }
