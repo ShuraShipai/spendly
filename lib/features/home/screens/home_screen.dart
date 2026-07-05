@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../../app/app_routes.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../../expenses/providers/expense_provider.dart';
@@ -59,7 +60,12 @@ class _HomeScreenState extends State<HomeScreen> {
           104,
         ),
         children: [
-          HomeHeader(greeting: greeting, displayName: displayName),
+          HomeHeader(
+            greeting: greeting,
+            displayName: displayName,
+            onProfileTap: () =>
+                Navigator.of(context).pushNamed(AppRoutes.settings),
+          ),
           if (shouldShowEmailBanner) ...[
             const SizedBox(height: AppSpacing.md),
             EmailVerificationBanner(

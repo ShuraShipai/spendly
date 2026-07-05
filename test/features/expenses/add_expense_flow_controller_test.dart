@@ -45,7 +45,7 @@ void main() {
       expect(controller.amount, '1000');
     });
 
-    test('keypad entry after preset continues editing the visible amount', () {
+    test('keypad entry after preset continues direct amount input', () {
       final controller = AddExpenseFlowController();
 
       controller.addPresetAmount(100);
@@ -54,6 +54,30 @@ void main() {
       controller.appendAmount('5');
 
       expect(controller.amount, '3005');
+    });
+
+    test('shortcut adds to the current typed amount', () {
+      final controller = AddExpenseFlowController();
+
+      controller.appendAmount('1');
+      controller.appendAmount('0');
+      controller.appendAmount('0');
+      controller.addPresetAmount(50);
+      controller.addPresetAmount(100);
+
+      expect(controller.amount, '250');
+    });
+
+    test('operator tokens are ignored by direct amount input', () {
+      final controller = AddExpenseFlowController();
+
+      controller.appendAmount('1');
+      controller.appendAmount('0');
+      controller.appendAmount('0');
+      controller.appendAmount('+');
+      controller.appendAmount('2');
+
+      expect(controller.amount, '1002');
     });
 
     test('decimal input is limited to two places and preset-safe', () {
@@ -70,6 +94,17 @@ void main() {
       controller.addPresetAmount(50);
 
       expect(controller.amount, '51.23');
+    });
+
+    test('ignores malformed amount input tokens', () {
+      final controller = AddExpenseFlowController();
+
+      controller.appendAmount('1');
+      controller.appendAmount('x');
+      controller.appendAmount('23');
+      controller.appendAmount('-');
+
+      expect(controller.amount, '1');
     });
   });
 }
