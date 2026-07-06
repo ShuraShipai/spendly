@@ -4,6 +4,7 @@ import '../../../core/theme/app_colors.dart';
 import '../models/expense_entry.dart';
 import 'delete_expense_icon.dart';
 import 'delete_expense_sheet_action_button.dart';
+import 'expense_theme.dart';
 
 class DeleteExpenseConfirmationSheet extends StatelessWidget {
   const DeleteExpenseConfirmationSheet({required this.expense, super.key});
@@ -12,16 +13,12 @@ class DeleteExpenseConfirmationSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
-    final sheetColor = isDark ? AppColors.darkSurface : AppColors.card;
-    final keepColor = isDark
-        ? AppColors.darkBackground
-        : const Color(0xFFF2EEE8);
-    final titleColor = isDark ? AppColors.darkInk : AppColors.ink;
-    final descriptionColor = isDark
-        ? AppColors.darkInkMuted
-        : AppColors.inkMuted;
+    final sheetColor = ExpenseTheme.surface(context);
+    final keepColor = colorScheme.surfaceContainerHighest;
+    final titleColor = colorScheme.onSurface;
+    final descriptionColor = colorScheme.onSurfaceVariant;
 
     return SafeArea(
       top: false,
@@ -31,9 +28,9 @@ class DeleteExpenseConfirmationSheet extends StatelessWidget {
         decoration: BoxDecoration(
           color: sheetColor,
           borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-          boxShadow: const [
+          boxShadow: [
             BoxShadow(
-              color: Color(0x1F000000),
+              color: colorScheme.shadow.withValues(alpha: 0.18),
               blurRadius: 30,
               offset: Offset(0, -10),
             ),
@@ -80,11 +77,11 @@ class DeleteExpenseConfirmationSheet extends StatelessWidget {
                 Expanded(
                   child: DeleteExpenseSheetActionButton(
                     label: 'Delete',
-                    foregroundColor: Colors.white,
+                    foregroundColor: colorScheme.onError,
                     backgroundColor: AppColors.danger,
-                    boxShadow: const [
+                    boxShadow: [
                       BoxShadow(
-                        color: Color(0x66E66A55),
+                        color: AppColors.danger.withValues(alpha: 0.4),
                         blurRadius: 18,
                         offset: Offset(0, 8),
                       ),

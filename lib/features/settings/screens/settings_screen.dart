@@ -8,6 +8,7 @@ import '../../../core/theme/app_spacing.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../widgets/danger_action.dart';
 import '../widgets/destructive_confirmation_dialog.dart';
+import '../widgets/edit_profile_sheet.dart';
 import '../widgets/mint_switch.dart';
 import '../widgets/profile_card.dart';
 import '../widgets/settings_divider.dart';
@@ -24,6 +25,7 @@ class SettingsScreen extends StatelessWidget {
     final authProvider = context.watch<AuthProvider>();
     final appState = context.watch<AppStateProvider>();
     final user = authProvider.user;
+    final platformBrightness = MediaQuery.platformBrightnessOf(context);
     final displayName = user?.displayName;
     final profileName = displayName == null || displayName.isEmpty
         ? 'Signed in'
@@ -43,6 +45,8 @@ class SettingsScreen extends StatelessWidget {
           ProfileCard(
             title: profileName,
             subtitle: user?.email ?? 'No email available',
+            photoUrl: user?.photoUrl,
+            onTap: () => _showEditProfileSheet(context),
           ),
           const SizedBox(height: AppSpacing.md),
           SettingsNavigationCard(
@@ -108,7 +112,7 @@ class SettingsScreen extends StatelessWidget {
                 icon: Icons.dark_mode_rounded,
                 title: 'Dark mode',
                 trailing: MintSwitch(
-                  value: appState.themeMode == ThemeMode.dark,
+                  value: appState.isDarkModeActive(platformBrightness),
                   onChanged: (value) {
                     context.read<AppStateProvider>().setThemeMode(
                       value ? ThemeMode.dark : ThemeMode.light,
@@ -126,6 +130,8 @@ class SettingsScreen extends StatelessWidget {
                 title: 'Budget alerts',
                 iconBackground: AppColors.warningSurface,
                 iconColor: AppColors.warning,
+                onTap: () =>
+                    Navigator.of(context).pushNamed(AppRoutes.notifications),
                 trailing: MintSwitch(
                   value: appState.budgetAlertsEnabled,
                   onChanged: context
@@ -185,6 +191,35 @@ class SettingsScreen extends StatelessWidget {
         options: options,
         selectedValue: selectedValue,
         onSelected: onSelected,
+      ),
+    );
+  }
+
+  void _showEditProfileSheet(BuildContext context) {
+    final authProvider = context.read<AuthProvider>();
+    final user = authProvider.user;
+    if (user == null) {
+      return;
+    }
+
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (_) => EditProfileSheet(
+        displayName: user.displayName ?? '',
+        email: user.email,
+        photoUrl: user.photoUrl,
+        onSave: ({required displayName, required photoUrl}) async {
+          await authProvider.updateProfile(
+            displayName: displayName,
+            photoUrl: photoUrl,
+          );
+          return authProvider.errorMessage == null;
+        },
       ),
     );
   }

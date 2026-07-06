@@ -61,6 +61,7 @@ class AuthProvider extends ChangeNotifier {
         displayName: displayName?.trim().isEmpty ?? true
             ? null
             : displayName?.trim(),
+        photoUrl: firebaseUser.photoURL,
       );
       await _userFirestoreService.createUser(appUser);
       await _authService.sendEmailVerification();
@@ -87,6 +88,7 @@ class AuthProvider extends ChangeNotifier {
             uid: firebaseUser.uid,
             email: firebaseUser.email ?? email.trim(),
             displayName: firebaseUser.displayName,
+            photoUrl: firebaseUser.photoURL,
           );
       _isEmailVerified = firebaseUser.emailVerified;
       _status = AuthStatus.authenticated;
@@ -101,6 +103,44 @@ class AuthProvider extends ChangeNotifier {
 
   Future<void> sendEmailVerification() async {
     await _runAuthTask(_authService.sendEmailVerification);
+  }
+
+  Future<void> updateProfile({
+    required String displayName,
+    required String? photoUrl,
+  }) async {
+    final currentUser = _user;
+    if (currentUser == null) {
+      _errorMessage = 'No signed-in account found.';
+      notifyListeners();
+      return;
+    }
+
+    final trimmedName = displayName.trim();
+    final normalizedName = trimmedName.isEmpty ? null : trimmedName;
+    final normalizedPhotoUrl = photoUrl?.trim();
+    final storedPhotoUrl =
+        normalizedPhotoUrl == null || normalizedPhotoUrl.isEmpty
+        ? null
+        : normalizedPhotoUrl;
+
+    await _runAuthTask(() async {
+      await _authService.updateCurrentUserProfile(
+        displayName: normalizedName,
+        photoUrl: storedPhotoUrl,
+      );
+      await _userFirestoreService.updateUserProfile(
+        uid: currentUser.uid,
+        displayName: normalizedName,
+        photoUrl: storedPhotoUrl,
+      );
+      _user = currentUser.copyWith(
+        displayName: normalizedName,
+        photoUrl: storedPhotoUrl,
+        clearDisplayName: normalizedName == null,
+        clearPhotoUrl: storedPhotoUrl == null,
+      );
+    });
   }
 
   Future<void> resetPassword({
@@ -128,6 +168,7 @@ class AuthProvider extends ChangeNotifier {
     }
 
     await _runAuthTask(() async {
+      await _userFirestoreService.deleteKnownUserData(uid);
       await _userFirestoreService.deleteUser(uid);
       await _authService.deleteCurrentUser();
     });
@@ -156,6 +197,7 @@ class AuthProvider extends ChangeNotifier {
           uid: firebaseUser.uid,
           email: firebaseUser.email ?? '',
           displayName: firebaseUser.displayName,
+          photoUrl: firebaseUser.photoURL,
         );
     _isEmailVerified = firebaseUser.emailVerified;
     _status = AuthStatus.authenticated;

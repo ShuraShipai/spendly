@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/theme/app_spacing.dart';
 import '../../expenses/models/expense_category.dart';
 import 'category_budget_row.dart';
-import 'settings_divider.dart';
-import 'settings_section.dart';
 
 class CategoryBudgetList extends StatelessWidget {
   const CategoryBudgetList({
@@ -21,18 +20,22 @@ class CategoryBudgetList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SettingsSection(
-      children: [
-        for (final category in categories) ...[
-          CategoryBudgetRow(
-            category: category,
-            budget: budgetForCategory(category),
-            spent: spentForCategory(category),
-            onTap: () => onEditCategory(category),
-          ),
-          if (category != categories.last) const SettingsDivider(),
-        ],
-      ],
-    );
+    final children = <Widget>[];
+    for (var index = 0; index < categories.length; index++) {
+      final category = categories[index];
+      children.add(
+        CategoryBudgetRow(
+          category: category,
+          budget: budgetForCategory(category),
+          spent: spentForCategory(category),
+          onTap: () => onEditCategory(category),
+        ),
+      );
+      if (index != categories.length - 1) {
+        children.add(const SizedBox(height: AppSpacing.sm));
+      }
+    }
+
+    return Column(children: children);
   }
 }

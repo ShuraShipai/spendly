@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
+import 'expense_theme.dart';
 
 class AmountShortcut extends StatelessWidget {
   const AmountShortcut({required this.label, required this.onTap, super.key});
@@ -12,7 +12,7 @@ class AmountShortcut extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: AppColors.mintTint,
+      color: ExpenseTheme.mintContainer(context),
       borderRadius: BorderRadius.circular(10),
       child: InkWell(
         onTap: onTap,
@@ -24,9 +24,9 @@ class AmountShortcut extends StatelessWidget {
           ),
           child: Text(
             label,
-            style: Theme.of(
-              context,
-            ).textTheme.labelMedium?.copyWith(color: AppColors.mintDark),
+            style: Theme.of(context).textTheme.labelMedium?.copyWith(
+              color: ExpenseTheme.onMintContainer(context),
+            ),
           ),
         ),
       ),

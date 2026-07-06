@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/theme/app_colors.dart';
+import 'expense_theme.dart';
 
 class ExpenseAmountRangeFilter extends StatelessWidget {
   const ExpenseAmountRangeFilter({
@@ -19,6 +20,7 @@ class ExpenseAmountRangeFilter extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
+    final colorScheme = Theme.of(context).colorScheme;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -28,7 +30,7 @@ class ExpenseAmountRangeFilter extends StatelessWidget {
           style: textTheme.labelMedium?.copyWith(
             fontSize: 12,
             fontWeight: FontWeight.w800,
-            color: AppColors.inkMuted,
+            color: ExpenseTheme.muted(context),
           ),
         ),
         const SizedBox(height: 8),
@@ -40,7 +42,7 @@ class ExpenseAmountRangeFilter extends StatelessWidget {
               style: textTheme.labelMedium?.copyWith(
                 fontSize: 12,
                 fontWeight: FontWeight.w800,
-                color: AppColors.ink,
+                color: colorScheme.onSurface,
               ),
             ),
             Text(
@@ -48,7 +50,7 @@ class ExpenseAmountRangeFilter extends StatelessWidget {
               style: textTheme.labelMedium?.copyWith(
                 fontSize: 12,
                 fontWeight: FontWeight.w800,
-                color: AppColors.ink,
+                color: colorScheme.onSurface,
               ),
             ),
           ],
@@ -57,7 +59,7 @@ class ExpenseAmountRangeFilter extends StatelessWidget {
         SliderTheme(
           data: SliderTheme.of(context).copyWith(
             activeTrackColor: AppColors.mint,
-            inactiveTrackColor: AppColors.line,
+            inactiveTrackColor: ExpenseTheme.outline(context),
             overlayColor: AppColors.mint.withValues(alpha: 0.12),
             rangeThumbShape: const RoundRangeSliderThumbShape(
               enabledThumbRadius: 8,
@@ -66,10 +68,10 @@ class ExpenseAmountRangeFilter extends StatelessWidget {
             ),
             rangeTrackShape: const RoundedRectRangeSliderTrackShape(),
             trackHeight: 5,
-            thumbColor: Colors.white,
+            thumbColor: colorScheme.surface,
             valueIndicatorColor: AppColors.mintDark,
             valueIndicatorTextStyle: textTheme.labelSmall?.copyWith(
-              color: Colors.white,
+              color: colorScheme.onPrimary,
               fontWeight: FontWeight.w800,
             ),
           ),

@@ -53,6 +53,19 @@ class AuthService {
     await user.sendEmailVerification();
   }
 
+  Future<void> updateCurrentUserProfile({
+    required String? displayName,
+    required String? photoUrl,
+  }) async {
+    final user = _firebaseAuth.currentUser;
+    if (user == null) {
+      throw firebase_auth.FirebaseAuthException(code: 'user-not-found');
+    }
+
+    await user.updateDisplayName(displayName);
+    await user.updatePhotoURL(photoUrl);
+  }
+
   Future<void> confirmPasswordReset({
     required String code,
     required String newPassword,

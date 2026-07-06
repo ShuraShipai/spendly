@@ -36,6 +36,8 @@ class _CustomCategoryNameDialogState extends State<CustomCategoryNameDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return AlertDialog(
       title: const Text('Add category'),
       content: TextField(
@@ -53,7 +55,7 @@ class _CustomCategoryNameDialogState extends State<CustomCategoryNameDialog> {
           hintText: 'e.g., Gym',
           hintStyle: Theme.of(
             context,
-          ).textTheme.bodyMedium?.copyWith(color: Colors.grey.shade400),
+          ).textTheme.bodyMedium?.copyWith(color: colorScheme.onSurfaceVariant),
           errorText: _showError ? 'Enter a category name' : null,
         ),
       ),

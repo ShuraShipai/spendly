@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/widgets/app_primary_button.dart';
 import '../../auth/providers/auth_provider.dart';
@@ -75,43 +74,12 @@ class _CategoryBudgetsScreenState extends State<CategoryBudgetsScreen> {
               spent: totalSpent,
               periodLabel: _monthLabel(month),
             ),
-            const SizedBox(height: AppSpacing.sm),
-            if (settingsProvider.monthlyBudget <= 0)
-              AppPrimaryButton(
-                label: 'Set limit',
-                onPressed: () => _showBudgetSheet(
-                  title: 'Monthly budget',
-                  initialAmount: settingsProvider.monthlyBudget,
-                  onSave: context.read<SettingsProvider>().setMonthlyBudget,
-                ),
-              )
-            else
-              Row(
-                children: [
-                  Expanded(
-                    child: AppPrimaryButton(
-                      label: 'Edit',
-                      onPressed: () => _showBudgetSheet(
-                        title: 'Monthly budget',
-                        initialAmount: settingsProvider.monthlyBudget,
-                        onSave: context
-                            .read<SettingsProvider>()
-                            .setMonthlyBudget,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: AppSpacing.sm),
-                  TextButton(
-                    onPressed: _resetMonthlyBudget,
-                    style: TextButton.styleFrom(
-                      foregroundColor: AppColors.danger,
-                      textStyle: Theme.of(context).textTheme.bodyMedium
-                          ?.copyWith(fontWeight: FontWeight.w800),
-                    ),
-                    child: const Text('Reset'),
-                  ),
-                ],
-              ),
+            const SizedBox(height: AppSpacing.md),
+            AppPrimaryButton(
+              label: 'Edit budgets',
+              onPressed: () =>
+                  _showMonthlyBudgetActions(settingsProvider.monthlyBudget),
+            ),
             const SizedBox(height: AppSpacing.lg),
             if (categories.isNotEmpty) ...[
               SettingsSectionHeader(
@@ -148,8 +116,70 @@ class _CategoryBudgetsScreenState extends State<CategoryBudgetsScreen> {
     context.read<SettingsProvider>().resetCategoryBudgets();
   }
 
-  void _resetMonthlyBudget() {
-    context.read<SettingsProvider>().setMonthlyBudget(0);
+  void _showMonthlyBudgetActions(double currentBudget) {
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (_) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(
+            AppSpacing.lg,
+            AppSpacing.md,
+            AppSpacing.lg,
+            AppSpacing.lg,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Monthly budget',
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
+              const SizedBox(height: AppSpacing.md),
+              if (currentBudget <= 0)
+                ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  title: const Text('Set limit'),
+                  onTap: () {
+                    Navigator.of(context).pop();
+                    _showBudgetSheet(
+                      title: 'Monthly budget',
+                      initialAmount: currentBudget,
+                      onSave: context.read<SettingsProvider>().setMonthlyBudget,
+                    );
+                  },
+                )
+              else ...[
+                ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  title: const Text('Edit limit'),
+                  onTap: () {
+                    Navigator.of(context).pop();
+                    _showBudgetSheet(
+                      title: 'Monthly budget',
+                      initialAmount: currentBudget,
+                      onSave: context.read<SettingsProvider>().setMonthlyBudget,
+                    );
+                  },
+                ),
+                ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  title: const Text('Reset to unlimited'),
+                  onTap: () {
+                    Navigator.of(context).pop();
+                    context.read<SettingsProvider>().setMonthlyBudget(0);
+                  },
+                ),
+              ],
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
   double _spentForCategory(

@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
+import 'expense_theme.dart';
 
 class EditAmountEditor extends StatelessWidget {
   const EditAmountEditor({
@@ -18,16 +19,16 @@ class EditAmountEditor extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final colorScheme = Theme.of(context).colorScheme;
 
     return DecoratedBox(
       decoration: BoxDecoration(
-        color: isDark ? AppColors.darkSurface : AppColors.card,
+        color: ExpenseTheme.surface(context),
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: AppColors.mint, width: 1.5),
-        boxShadow: const [
+        boxShadow: [
           BoxShadow(
-            color: Color(0x3334C6A8),
+            color: colorScheme.primary.withValues(alpha: 0.2),
             blurRadius: 14,
             offset: Offset(0, 6),
           ),
@@ -39,9 +40,9 @@ class EditAmountEditor extends StatelessWidget {
           children: [
             Text(
               'AMOUNT',
-              style: Theme.of(
-                context,
-              ).textTheme.labelMedium?.copyWith(color: AppColors.inkSubtle),
+              style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                color: ExpenseTheme.subtle(context),
+              ),
             ),
             TextField(
               controller: controller,

@@ -63,69 +63,81 @@ class ExpenseDetailsStep extends StatelessWidget {
 
     return ExpenseSheetFrame(
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          ExpenseSheetHeader(
-            title: 'New expense',
-            leadingIcon: Icons.close_rounded,
-            onLeadingPressed: onClose,
-          ),
-          const SizedBox(height: AppSpacing.md),
-          AmountCard(amount: amount, onTap: onAmountPressed),
-          const SizedBox(height: AppSpacing.lg),
-          const SectionLabel('CATEGORY'),
-          const SizedBox(height: AppSpacing.xs),
-          Wrap(
-            spacing: AppSpacing.xs,
-            runSpacing: AppSpacing.xs,
-            children: [
-              for (final option in visibleCategories)
-                ExpenseCategoryChip(
-                  category: option,
-                  selected: option == category,
-                  onTap: () => onCategoryChanged(option),
-                ),
-              MoreChip(onTap: onAddCategory),
-            ],
-          ),
-          const SizedBox(height: AppSpacing.lg),
-          Row(
-            children: [
-              Expanded(
-                child: ExpenseInfoField(
-                  label: 'DATE',
-                  value: _formatDate(selectedDate),
-                  icon: Icons.calendar_month_rounded,
-                  onTap: onDatePressed,
-                ),
-              ),
-              const SizedBox(width: AppSpacing.sm),
-              Expanded(
-                child: PopupMenuButton<PaymentMethod>(
-                  onSelected: onPaymentMethodChanged,
-                  itemBuilder: (context) {
-                    return [
-                      for (final method in PaymentMethod.values)
-                        PopupMenuItem(value: method, child: Text(method.label)),
-                    ];
-                  },
-                  child: ExpenseInfoField(
-                    label: 'PAY VIA',
-                    value: paymentMethod?.label ?? '',
-                    indicatorColor: paymentMethod == null
-                        ? null
-                        : AppColors.transport,
-                    hasError: showPaymentError,
-                    helperText: showPaymentError ? 'Required' : null,
-                    showDisclosure: true,
+          Expanded(
+            child: SingleChildScrollView(
+              keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+              padding: const EdgeInsets.only(bottom: AppSpacing.md),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  ExpenseSheetHeader(
+                    title: 'New expense',
+                    leadingIcon: Icons.close_rounded,
+                    onLeadingPressed: onClose,
                   ),
-                ),
+                  const SizedBox(height: AppSpacing.md),
+                  AmountCard(amount: amount, onTap: onAmountPressed),
+                  const SizedBox(height: AppSpacing.lg),
+                  const SectionLabel('CATEGORY'),
+                  const SizedBox(height: AppSpacing.xs),
+                  Wrap(
+                    spacing: AppSpacing.xs,
+                    runSpacing: AppSpacing.xs,
+                    children: [
+                      for (final option in visibleCategories)
+                        ExpenseCategoryChip(
+                          category: option,
+                          selected: option == category,
+                          onTap: () => onCategoryChanged(option),
+                        ),
+                      MoreChip(onTap: onAddCategory),
+                    ],
+                  ),
+                  const SizedBox(height: AppSpacing.lg),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: ExpenseInfoField(
+                          label: 'DATE',
+                          value: _formatDate(selectedDate),
+                          icon: Icons.calendar_month_rounded,
+                          onTap: onDatePressed,
+                        ),
+                      ),
+                      const SizedBox(width: AppSpacing.sm),
+                      Expanded(
+                        child: PopupMenuButton<PaymentMethod>(
+                          onSelected: onPaymentMethodChanged,
+                          itemBuilder: (context) {
+                            return [
+                              for (final method in PaymentMethod.values)
+                                PopupMenuItem(
+                                  value: method,
+                                  child: Text(method.label),
+                                ),
+                            ];
+                          },
+                          child: ExpenseInfoField(
+                            label: 'PAY VIA',
+                            value: paymentMethod?.label ?? '',
+                            indicatorColor: paymentMethod == null
+                                ? null
+                                : AppColors.transport,
+                            hasError: showPaymentError,
+                            helperText: showPaymentError ? 'Required' : null,
+                            showDisclosure: true,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: AppSpacing.md),
+                  ExpenseNoteField(note: note, onChanged: onNoteChanged),
+                ],
               ),
-            ],
+            ),
           ),
-          const SizedBox(height: AppSpacing.md),
-          ExpenseNoteField(note: note, onChanged: onNoteChanged),
-          const Spacer(),
           MintActionButton(
             label: isSaving ? 'Saving...' : 'Save expense',
             onPressed: onSave,

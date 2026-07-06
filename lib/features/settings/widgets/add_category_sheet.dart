@@ -7,7 +7,7 @@ import '../../expenses/widgets/mint_action_button.dart';
 class AddCategorySheet extends StatefulWidget {
   const AddCategorySheet({required this.onSave, super.key});
 
-  final ValueChanged<String> onSave;
+  final Future<bool> Function(String label) onSave;
 
   @override
   State<AddCategorySheet> createState() => _AddCategorySheetState();
@@ -16,6 +16,7 @@ class AddCategorySheet extends StatefulWidget {
 class _AddCategorySheetState extends State<AddCategorySheet> {
   late final TextEditingController _controller;
   String? _errorText;
+  var _isSaving = false;
 
   @override
   void initState() {
@@ -53,7 +54,11 @@ class _AddCategorySheetState extends State<AddCategorySheet> {
               autofocus: true,
               textCapitalization: TextCapitalization.words,
               textInputAction: TextInputAction.done,
-              onSubmitted: (_) => _save(),
+              onSubmitted: (_) {
+                if (!_isSaving) {
+                  _save();
+                }
+              },
               onChanged: (_) {
                 if (_errorText != null) {
                   setState(() => _errorText = null);
@@ -73,21 +78,42 @@ class _AddCategorySheetState extends State<AddCategorySheet> {
               ),
             ),
             const SizedBox(height: AppSpacing.lg),
-            MintActionButton(label: 'Save category', onPressed: _save),
+            MintActionButton(
+              label: _isSaving ? 'Saving...' : 'Save category',
+              onPressed: _save,
+              isEnabled: !_isSaving,
+            ),
           ],
         ),
       ),
     );
   }
 
-  void _save() {
+  Future<void> _save() async {
     final label = _controller.text.trim();
     if (label.isEmpty) {
       setState(() => _errorText = 'Enter a category name');
       return;
     }
 
-    widget.onSave(label);
+    setState(() {
+      _errorText = null;
+      _isSaving = true;
+    });
+
+    final saved = await widget.onSave(label);
+    if (!mounted) {
+      return;
+    }
+
+    if (!saved) {
+      setState(() {
+        _errorText = 'Could not save category. Please try again.';
+        _isSaving = false;
+      });
+      return;
+    }
+
     Navigator.of(context).pop();
   }
 }

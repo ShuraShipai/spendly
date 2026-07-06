@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../../core/theme/app_colors.dart';
+import 'expense_theme.dart';
 
 class ExpenseHeaderIconBox extends StatelessWidget {
   const ExpenseHeaderIconBox({required this.icon, this.onTap, super.key});
@@ -10,15 +10,11 @@ class ExpenseHeaderIconBox extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
     final iconBox = DecoratedBox(
       decoration: BoxDecoration(
-        color: isDark ? AppColors.darkSurface : AppColors.card,
+        color: ExpenseTheme.surface(context),
         borderRadius: BorderRadius.circular(11),
-        border: Border.all(
-          color: isDark ? AppColors.darkInkMuted : AppColors.line,
-        ),
+        border: Border.all(color: ExpenseTheme.outline(context)),
       ),
       child: SizedBox.square(dimension: 34, child: Icon(icon, size: 18)),
     );

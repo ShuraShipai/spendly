@@ -5,6 +5,7 @@ class AppUser {
     required this.uid,
     required this.email,
     this.displayName,
+    this.photoUrl,
     this.createdAt,
     this.updatedAt,
   });
@@ -12,6 +13,7 @@ class AppUser {
   final String uid;
   final String email;
   final String? displayName;
+  final String? photoUrl;
   final DateTime? createdAt;
   final DateTime? updatedAt;
 
@@ -22,6 +24,7 @@ class AppUser {
       uid: data['uid'] as String? ?? doc.id,
       email: data['email'] as String? ?? '',
       displayName: data['displayName'] as String?,
+      photoUrl: data['photoUrl'] as String?,
       createdAt: _dateFromTimestamp(data['createdAt']),
       updatedAt: _dateFromTimestamp(data['updatedAt']),
     );
@@ -32,9 +35,29 @@ class AppUser {
       'uid': uid,
       'email': email,
       'displayName': displayName,
+      'photoUrl': photoUrl,
       'createdAt': FieldValue.serverTimestamp(),
       'updatedAt': FieldValue.serverTimestamp(),
     };
+  }
+
+  AppUser copyWith({
+    String? email,
+    String? displayName,
+    String? photoUrl,
+    bool clearDisplayName = false,
+    bool clearPhotoUrl = false,
+    DateTime? createdAt,
+    DateTime? updatedAt,
+  }) {
+    return AppUser(
+      uid: uid,
+      email: email ?? this.email,
+      displayName: clearDisplayName ? null : displayName ?? this.displayName,
+      photoUrl: clearPhotoUrl ? null : photoUrl ?? this.photoUrl,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+    );
   }
 
   static DateTime? _dateFromTimestamp(Object? value) {

@@ -27,7 +27,36 @@ class UserFirestoreService {
         .set(user.toCreateMap(), SetOptions(merge: true));
   }
 
+  Future<void> updateUserProfile({
+    required String uid,
+    required String? displayName,
+    required String? photoUrl,
+  }) {
+    return _users.doc(uid).set({
+      'displayName': displayName,
+      'photoUrl': photoUrl,
+      'updatedAt': FieldValue.serverTimestamp(),
+    }, SetOptions(merge: true));
+  }
+
   Future<void> deleteUser(String uid) {
     return _users.doc(uid).delete();
+  }
+
+  Future<void> deleteKnownUserData(String uid) async {
+    final userDoc = _users.doc(uid);
+    for (final collectionId in [
+      'expenses',
+      'settings',
+      'customCategories',
+      'categories',
+    ]) {
+      final snapshot = await userDoc.collection(collectionId).get();
+      final batch = _firestore.batch();
+      for (final doc in snapshot.docs) {
+        batch.delete(doc.reference);
+      }
+      await batch.commit();
+    }
   }
 }

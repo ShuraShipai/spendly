@@ -70,8 +70,8 @@ void main() {
     expect(
       csv,
       [
-        'Date,Category,Payment method,Amount,Note',
-        '2026-07-02,Food,UPI,120.50,"Coffee, ""large"""',
+        'Date,Category,Payment method,Amount,Currency,Note',
+        '2026-07-02,Food,UPI,120.50,INR,"Coffee, ""large"""',
       ].join('\n'),
     );
   });

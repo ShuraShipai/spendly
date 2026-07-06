@@ -36,5 +36,21 @@ void main() {
 
       expect(notifications, 0);
     });
+
+    test('resolves system theme against platform brightness', () {
+      final provider = AppStateProvider();
+
+      expect(provider.themeMode, ThemeMode.system);
+      expect(provider.isDarkModeActive(Brightness.light), isFalse);
+      expect(provider.isDarkModeActive(Brightness.dark), isTrue);
+
+      provider.setThemeMode(ThemeMode.light);
+
+      expect(provider.isDarkModeActive(Brightness.dark), isFalse);
+
+      provider.setThemeMode(ThemeMode.dark);
+
+      expect(provider.isDarkModeActive(Brightness.light), isTrue);
+    });
   });
 }

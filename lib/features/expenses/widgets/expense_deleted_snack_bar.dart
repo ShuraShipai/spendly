@@ -56,13 +56,15 @@ class ExpenseDeletedSnackBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return DecoratedBox(
       decoration: BoxDecoration(
-        color: AppColors.ink,
+        color: colorScheme.inverseSurface,
         borderRadius: BorderRadius.circular(16),
-        boxShadow: const [
+        boxShadow: [
           BoxShadow(
-            color: Color(0x40000000),
+            color: colorScheme.shadow.withValues(alpha: 0.25),
             blurRadius: 26,
             offset: Offset(0, 10),
           ),
@@ -78,7 +80,7 @@ class ExpenseDeletedSnackBar extends StatelessWidget {
               child: Text(
                 'Expense deleted',
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: Colors.white,
+                  color: colorScheme.onInverseSurface,
                   fontSize: 13,
                   height: 1.2,
                   fontWeight: FontWeight.w700,
@@ -93,7 +95,7 @@ class ExpenseDeletedSnackBar extends StatelessWidget {
                 child: Text(
                   'UNDO',
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: const Color(0xFF5FE0C0),
+                    color: AppColors.mint,
                     fontSize: 13,
                     height: 1.2,
                     fontWeight: FontWeight.w900,

@@ -11,6 +11,8 @@ class AmountCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Material(
       color: Colors.transparent,
       borderRadius: BorderRadius.circular(22),
@@ -25,9 +27,9 @@ class AmountCard extends StatelessWidget {
               colors: [AppColors.mint, AppColors.mintDark],
             ),
             borderRadius: BorderRadius.circular(22),
-            boxShadow: const [
+            boxShadow: [
               BoxShadow(
-                color: Color(0x4D1E9E84),
+                color: AppColors.mintDark.withValues(alpha: 0.3),
                 blurRadius: 24,
                 offset: Offset(0, 10),
               ),
@@ -42,15 +44,15 @@ class AmountCard extends StatelessWidget {
                   Text(
                     'AMOUNT',
                     style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                      color: Colors.white.withValues(alpha: 0.85),
+                      color: colorScheme.onPrimary.withValues(alpha: 0.85),
                     ),
                   ),
                   const SizedBox(height: AppSpacing.xs),
                   Text(
                     '₹$amount',
-                    style: Theme.of(
-                      context,
-                    ).textTheme.displaySmall?.copyWith(color: Colors.white),
+                    style: Theme.of(context).textTheme.displaySmall?.copyWith(
+                      color: colorScheme.onPrimary,
+                    ),
                   ),
                 ],
               ),

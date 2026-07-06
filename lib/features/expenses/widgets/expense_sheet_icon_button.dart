@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../../core/theme/app_colors.dart';
+import 'expense_theme.dart';
 
 class ExpenseSheetIconButton extends StatelessWidget {
   const ExpenseSheetIconButton({
@@ -14,10 +14,8 @@ class ExpenseSheetIconButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
     return Material(
-      color: isDark ? AppColors.darkSurface : AppColors.card,
+      color: ExpenseTheme.surface(context),
       borderRadius: BorderRadius.circular(11),
       child: InkWell(
         onTap: onPressed,

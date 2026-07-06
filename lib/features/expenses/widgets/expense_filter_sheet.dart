@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 
-import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../models/expense_category.dart';
 import '../models/payment_method.dart';
+import 'expense_theme.dart';
 import 'mint_action_button.dart';
 
 class ExpenseFilterSheet extends StatefulWidget {
@@ -37,6 +37,8 @@ class _ExpenseFilterSheetState extends State<ExpenseFilterSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return SafeArea(
       child: Padding(
         padding: const EdgeInsets.fromLTRB(
@@ -64,8 +66,12 @@ class _ExpenseFilterSheetState extends State<ExpenseFilterSheet> {
                   FilterChip(
                     label: Text(category.label),
                     selected: _categoryIds.contains(category.id),
-                    selectedColor: AppColors.mintTint,
-                    checkmarkColor: AppColors.mintDark,
+                    selectedColor: ExpenseTheme.mintContainer(context),
+                    checkmarkColor: ExpenseTheme.onMintContainer(context),
+                    backgroundColor: ExpenseTheme.surface(context),
+                    side: BorderSide(color: ExpenseTheme.outline(context)),
+                    labelStyle: Theme.of(context).textTheme.labelMedium
+                        ?.copyWith(color: colorScheme.onSurface),
                     onSelected: (_) => _toggleCategory(category.id),
                   ),
               ],
@@ -81,8 +87,12 @@ class _ExpenseFilterSheetState extends State<ExpenseFilterSheet> {
                   FilterChip(
                     label: Text(method.label),
                     selected: _paymentMethods.contains(method),
-                    selectedColor: AppColors.mintTint,
-                    checkmarkColor: AppColors.mintDark,
+                    selectedColor: ExpenseTheme.mintContainer(context),
+                    checkmarkColor: ExpenseTheme.onMintContainer(context),
+                    backgroundColor: ExpenseTheme.surface(context),
+                    side: BorderSide(color: ExpenseTheme.outline(context)),
+                    labelStyle: Theme.of(context).textTheme.labelMedium
+                        ?.copyWith(color: colorScheme.onSurface),
                     onSelected: (_) => _togglePaymentMethod(method),
                   ),
               ],

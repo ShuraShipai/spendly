@@ -88,13 +88,11 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
       builder: (_) => AddCategorySheet(
-        onSave: (label) {
-          unawaited(
-            context.read<SettingsProvider>().addCustomCategory(
-              uid: uid,
-              label: label,
-            ),
-          );
+        onSave: (label) async {
+          final category = await context
+              .read<SettingsProvider>()
+              .addCustomCategory(uid: uid, label: label);
+          return category != null;
         },
       ),
     );

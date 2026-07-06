@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
-import '../../../core/theme/app_colors.dart';
 import '../models/expense_entry.dart';
 import 'expense_info_row.dart';
+import 'expense_theme.dart';
 
 class ExpenseInfoCard extends StatelessWidget {
   const ExpenseInfoCard({required this.expense, super.key});
@@ -11,15 +11,11 @@ class ExpenseInfoCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
     return DecoratedBox(
       decoration: BoxDecoration(
-        color: isDark ? AppColors.darkSurface : AppColors.card,
+        color: ExpenseTheme.surface(context),
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(
-          color: isDark ? AppColors.darkInkMuted : AppColors.line,
-        ),
+        border: Border.all(color: ExpenseTheme.outline(context)),
       ),
       child: Column(
         children: [

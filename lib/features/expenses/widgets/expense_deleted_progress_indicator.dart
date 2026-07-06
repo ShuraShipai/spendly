@@ -7,6 +7,8 @@ class ExpenseDeletedProgressIndicator extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return TweenAnimationBuilder<double>(
       tween: Tween(begin: 1, end: 0),
       duration: duration,
@@ -16,8 +18,10 @@ class ExpenseDeletedProgressIndicator extends StatelessWidget {
           child: CircularProgressIndicator(
             value: value,
             strokeWidth: 2.6,
-            backgroundColor: Colors.white.withValues(alpha: 0.22),
-            valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF8FD884)),
+            backgroundColor: colorScheme.onInverseSurface.withValues(
+              alpha: 0.22,
+            ),
+            valueColor: AlwaysStoppedAnimation<Color>(colorScheme.primary),
           ),
         );
       },
