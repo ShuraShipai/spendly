@@ -2,10 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../../app/app_routes.dart';
+import '../../../app/providers/app_state_provider.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../auth/providers/auth_provider.dart';
-import '../../expenses/providers/expense_provider.dart';
 import '../../expenses/models/expense_entry.dart';
+import '../../expenses/providers/expense_provider.dart';
 import '../models/dashboard_period.dart';
 import '../providers/dashboard_period_provider.dart';
 import '../widgets/email_verification_banner.dart';
@@ -30,6 +31,7 @@ class _HomeScreenState extends State<HomeScreen> {
     final authProvider = context.watch<AuthProvider>();
     final expenseProvider = context.watch<ExpenseProvider>();
     final dashboardState = context.watch<DashboardPeriodProvider>();
+    final appState = context.watch<AppStateProvider>();
     final user = authProvider.user;
     final displayName = user?.displayName;
     final firstName = displayName == null || displayName.isEmpty
@@ -44,11 +46,13 @@ class _HomeScreenState extends State<HomeScreen> {
       expenseProvider,
       selectedPeriod,
       referenceDate,
+      appState.weekStart,
     );
     final dashboardTotal = _totalForPeriod(
       expenseProvider,
       selectedPeriod,
       referenceDate,
+      appState.weekStart,
     );
 
     return SafeArea(
@@ -63,6 +67,7 @@ class _HomeScreenState extends State<HomeScreen> {
           HomeHeader(
             greeting: greeting,
             displayName: displayName,
+            photoUrl: user?.photoUrl,
             onProfileTap: () =>
                 Navigator.of(context).pushNamed(AppRoutes.settings),
           ),
@@ -94,20 +99,33 @@ class _HomeScreenState extends State<HomeScreen> {
           if (dashboardExpenses.isEmpty)
             const EmptyExpenseState()
           else
-            RecentExpensesList(expenses: dashboardExpenses),
+            RecentExpensesList(
+              expenses: dashboardExpenses,
+              onExpenseTap: (expense) => _openExpenseDetail(context, expense),
+            ),
         ],
       ),
     );
+  }
+
+  void _openExpenseDetail(BuildContext context, ExpenseEntry expense) {
+    Navigator.of(
+      context,
+    ).pushNamed(AppRoutes.expenseDetail, arguments: expense.id);
   }
 
   List<ExpenseEntry> _expensesForPeriod(
     ExpenseProvider provider,
     DashboardPeriod period,
     DateTime referenceDate,
+    WeekStartPreference weekStart,
   ) {
     return switch (period) {
       DashboardPeriod.today => provider.expensesForDay(referenceDate),
-      DashboardPeriod.week => provider.expensesForWeek(referenceDate),
+      DashboardPeriod.week => provider.expensesForWeek(
+        referenceDate,
+        weekStartsOn: _weekStartDay(weekStart),
+      ),
       DashboardPeriod.month => provider.expensesForMonth(referenceDate),
     };
   }
@@ -116,11 +134,22 @@ class _HomeScreenState extends State<HomeScreen> {
     ExpenseProvider provider,
     DashboardPeriod period,
     DateTime referenceDate,
+    WeekStartPreference weekStart,
   ) {
     return switch (period) {
       DashboardPeriod.today => provider.totalSpentForDay(referenceDate),
-      DashboardPeriod.week => provider.totalSpentForWeek(referenceDate),
+      DashboardPeriod.week => provider.totalSpentForWeek(
+        referenceDate,
+        weekStartsOn: _weekStartDay(weekStart),
+      ),
       DashboardPeriod.month => provider.totalSpentForMonth(referenceDate),
+    };
+  }
+
+  int _weekStartDay(WeekStartPreference weekStart) {
+    return switch (weekStart) {
+      WeekStartPreference.monday => DateTime.monday,
+      WeekStartPreference.sunday => DateTime.sunday,
     };
   }
 }

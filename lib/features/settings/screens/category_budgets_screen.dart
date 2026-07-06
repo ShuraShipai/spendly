@@ -3,12 +3,15 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
+import '../../../core/widgets/app_primary_button.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../../expenses/models/expense_category.dart';
 import '../../expenses/providers/expense_provider.dart';
 import '../providers/settings_provider.dart';
 import '../widgets/budget_amount_sheet.dart';
+import '../widgets/budget_overview_card.dart';
 import '../widgets/category_budget_list.dart';
 import '../widgets/settings_section_header.dart';
 
@@ -37,7 +40,9 @@ class _CategoryBudgetsScreenState extends State<CategoryBudgetsScreen> {
       if (!mounted) {
         return;
       }
-      unawaited(context.read<SettingsProvider>().loadCategories(uid));
+      final settingsProvider = context.read<SettingsProvider>();
+      unawaited(settingsProvider.loadCategories(uid));
+      unawaited(settingsProvider.loadBudget(uid));
     });
   }
 
@@ -46,9 +51,14 @@ class _CategoryBudgetsScreenState extends State<CategoryBudgetsScreen> {
     final settingsProvider = context.watch<SettingsProvider>();
     final expenseProvider = context.watch<ExpenseProvider>();
     final categories = settingsProvider.categories;
-
+    final month = DateTime.now();
+    final monthExpenses = expenseProvider.expensesForMonth(month);
+    final totalSpent = monthExpenses.fold<double>(
+      0,
+      (total, expense) => total + expense.amount,
+    );
     return Scaffold(
-      appBar: AppBar(title: const Text('Category Budgets')),
+      appBar: AppBar(title: const Text('Budgets')),
       body: SafeArea(
         child: ListView(
           padding: const EdgeInsets.fromLTRB(
@@ -58,34 +68,88 @@ class _CategoryBudgetsScreenState extends State<CategoryBudgetsScreen> {
             AppSpacing.xxl,
           ),
           children: [
-            SettingsSectionHeader(
-              title: 'CATEGORY BUDGETS',
-              actionLabel: 'Reset',
-              onAction: _resetCategoryBudgets,
+            Text('Budgets', style: Theme.of(context).textTheme.titleLarge),
+            const SizedBox(height: AppSpacing.md),
+            BudgetOverviewCard(
+              budget: settingsProvider.monthlyBudget,
+              spent: totalSpent,
+              periodLabel: _monthLabel(month),
             ),
-            const SizedBox(height: AppSpacing.xs),
-            if (settingsProvider.isLoadingCategories) ...[
-              const LinearProgressIndicator(minHeight: 3),
-              const SizedBox(height: AppSpacing.sm),
-            ],
-            CategoryBudgetList(
-              categories: categories,
-              budgetForCategory: (category) =>
-                  settingsProvider.budgetForCategory(category.id),
-              spentForCategory: (category) =>
-                  _spentForCategory(expenseProvider, category),
-              onEditCategory: (category) => _showBudgetSheet(
-                title: '${category.label} budget',
-                initialAmount: settingsProvider.budgetForCategory(category.id),
-                onSave: (amount) => context
-                    .read<SettingsProvider>()
-                    .setCategoryBudget(category.id, amount),
+            const SizedBox(height: AppSpacing.sm),
+            if (settingsProvider.monthlyBudget <= 0)
+              AppPrimaryButton(
+                label: 'Set limit',
+                onPressed: () => _showBudgetSheet(
+                  title: 'Monthly budget',
+                  initialAmount: settingsProvider.monthlyBudget,
+                  onSave: context.read<SettingsProvider>().setMonthlyBudget,
+                ),
+              )
+            else
+              Row(
+                children: [
+                  Expanded(
+                    child: AppPrimaryButton(
+                      label: 'Edit',
+                      onPressed: () => _showBudgetSheet(
+                        title: 'Monthly budget',
+                        initialAmount: settingsProvider.monthlyBudget,
+                        onSave: context
+                            .read<SettingsProvider>()
+                            .setMonthlyBudget,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: AppSpacing.sm),
+                  TextButton(
+                    onPressed: _resetMonthlyBudget,
+                    style: TextButton.styleFrom(
+                      foregroundColor: AppColors.danger,
+                      textStyle: Theme.of(context).textTheme.bodyMedium
+                          ?.copyWith(fontWeight: FontWeight.w800),
+                    ),
+                    child: const Text('Reset'),
+                  ),
+                ],
               ),
-            ),
+            const SizedBox(height: AppSpacing.lg),
+            if (categories.isNotEmpty) ...[
+              SettingsSectionHeader(
+                title: 'PER CATEGORY',
+                actionLabel: 'Reset',
+                onAction: _resetCategoryBudgets,
+              ),
+              const SizedBox(height: 10),
+              CategoryBudgetList(
+                categories: categories,
+                budgetForCategory: (category) =>
+                    settingsProvider.budgetForCategory(category.id),
+                spentForCategory: (category) =>
+                    _spentForCategory(expenseProvider, category),
+                onEditCategory: (category) => _showBudgetSheet(
+                  title: '${category.label} budget',
+                  initialAmount: settingsProvider.budgetForCategory(
+                    category.id,
+                  ),
+                  onSave: (amount) => context
+                      .read<SettingsProvider>()
+                      .setCategoryBudget(category.id, amount),
+                ),
+              ),
+              const SizedBox(height: AppSpacing.md),
+            ],
           ],
         ),
       ),
     );
+  }
+
+  void _resetCategoryBudgets() {
+    context.read<SettingsProvider>().resetCategoryBudgets();
+  }
+
+  void _resetMonthlyBudget() {
+    context.read<SettingsProvider>().setMonthlyBudget(0);
   }
 
   double _spentForCategory(
@@ -118,10 +182,22 @@ class _CategoryBudgetsScreenState extends State<CategoryBudgetsScreen> {
     );
   }
 
-  void _resetCategoryBudgets() {
-    final settingsProvider = context.read<SettingsProvider>();
-    for (final category in settingsProvider.categories) {
-      settingsProvider.setCategoryBudget(category.id, 0);
-    }
+  String _monthLabel(DateTime date) {
+    const labels = [
+      'January',
+      'February',
+      'March',
+      'April',
+      'May',
+      'June',
+      'July',
+      'August',
+      'September',
+      'October',
+      'November',
+      'December',
+    ];
+
+    return labels[date.month - 1];
   }
 }
