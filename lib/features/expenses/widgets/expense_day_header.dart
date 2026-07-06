@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../../core/theme/app_colors.dart';
+import 'expense_theme.dart';
 
 class ExpenseDayHeader extends StatelessWidget {
   const ExpenseDayHeader({required this.date, required this.total, super.key});
@@ -15,16 +15,16 @@ class ExpenseDayHeader extends StatelessWidget {
         Expanded(
           child: Text(
             _formatDate(date),
-            style: Theme.of(
-              context,
-            ).textTheme.labelMedium?.copyWith(color: AppColors.inkMuted),
+            style: Theme.of(context).textTheme.labelMedium?.copyWith(
+              color: ExpenseTheme.muted(context),
+            ),
           ),
         ),
         Text(
           _formatAmount(total),
-          style: Theme.of(
-            context,
-          ).textTheme.labelMedium?.copyWith(color: AppColors.inkSubtle),
+          style: Theme.of(context).textTheme.labelMedium?.copyWith(
+            color: ExpenseTheme.subtle(context),
+          ),
         ),
       ],
     );

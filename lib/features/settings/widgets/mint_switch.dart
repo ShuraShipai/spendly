@@ -10,6 +10,8 @@ class MintSwitch extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return GestureDetector(
       onTap: onChanged == null ? null : () => onChanged!(!value),
       child: AnimatedContainer(
@@ -17,7 +19,7 @@ class MintSwitch extends StatelessWidget {
         width: 42,
         height: 24,
         decoration: BoxDecoration(
-          color: value ? AppColors.mint : AppColors.line,
+          color: value ? AppColors.mint : colorScheme.outlineVariant,
           borderRadius: BorderRadius.circular(14),
         ),
         child: AnimatedAlign(
@@ -28,11 +30,11 @@ class MintSwitch extends StatelessWidget {
             padding: const EdgeInsets.all(2),
             child: DecoratedBox(
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: colorScheme.surface,
                 shape: BoxShape.circle,
-                boxShadow: const [
+                boxShadow: [
                   BoxShadow(
-                    color: Color(0x33000000),
+                    color: colorScheme.shadow.withValues(alpha: 0.2),
                     blurRadius: 3,
                     offset: Offset(0, 1),
                   ),

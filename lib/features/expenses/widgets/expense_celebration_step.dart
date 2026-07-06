@@ -4,6 +4,7 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../models/expense_entry.dart';
 import 'celebration_confetti_row.dart';
+import 'expense_theme.dart';
 import 'expense_sheet_frame.dart';
 import 'mint_action_button.dart';
 import 'saved_expense_card.dart';
@@ -22,13 +23,18 @@ class ExpenseCelebrationStep extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return ExpenseSheetFrame(
       child: DecoratedBox(
         decoration: BoxDecoration(
-          gradient: const LinearGradient(
+          gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [AppColors.mintTint, AppColors.background],
+            colors: [
+              ExpenseTheme.mintContainer(context),
+              Theme.of(context).scaffoldBackgroundColor,
+            ],
           ),
           borderRadius: BorderRadius.circular(28),
         ),
@@ -77,7 +83,7 @@ class ExpenseCelebrationStep extends StatelessWidget {
                   'Add another',
                   style: Theme.of(
                     context,
-                  ).textTheme.labelLarge?.copyWith(color: AppColors.mintDark),
+                  ).textTheme.labelLarge?.copyWith(color: colorScheme.primary),
                 ),
               ),
             ],

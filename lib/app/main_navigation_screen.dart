@@ -19,12 +19,19 @@ class MainNavigationScreen extends StatefulWidget {
 class _MainNavigationScreenState extends State<MainNavigationScreen> {
   var _selectedIndex = 0;
   var _isExpenseSearchActive = false;
+  var _expenseTemporaryStateResetToken = 0;
 
   void _selectTab(int index) {
     if (_selectedIndex == index) {
       return;
     }
-    setState(() => _selectedIndex = index);
+    setState(() {
+      if (_selectedIndex == 1) {
+        _expenseTemporaryStateResetToken++;
+        _isExpenseSearchActive = false;
+      }
+      _selectedIndex = index;
+    });
   }
 
   void _setExpenseSearchActive(bool value) {
@@ -53,7 +60,10 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     final shouldShowFab = !(_selectedIndex == 1 && _isExpenseSearchActive);
     final screens = [
       const HomeScreen(),
-      ExpenseListScreen(onSearchModeChanged: _setExpenseSearchActive),
+      ExpenseListScreen(
+        temporaryStateResetToken: _expenseTemporaryStateResetToken,
+        onSearchModeChanged: _setExpenseSearchActive,
+      ),
       const ReportsScreen(),
       const SettingsScreen(),
     ];

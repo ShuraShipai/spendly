@@ -49,6 +49,75 @@ void main() {
       expect(provider.totalSpentForMonth(july), 420);
     });
 
+    test('uses local inclusive starts and exclusive ends for periods', () {
+      final provider = ExpenseProvider();
+      final referenceDay = DateTime(2026, 7, 2, 12);
+      final startOfDay = DateTime(2026, 7, 2);
+      final endOfDay = DateTime(2026, 7, 3);
+      final startOfWeek = DateTime(2026, 6, 29);
+      final endOfWeek = DateTime(2026, 7, 6);
+      final startOfMonth = DateTime(2026, 7);
+      final endOfMonth = DateTime(2026, 8);
+
+      void add(String id, DateTime date, double amount) {
+        provider.addExpense(
+          ExpenseEntry(
+            id: id,
+            amount: amount,
+            category: ExpenseCategory.food,
+            date: date,
+            paymentMethod: PaymentMethod.cash,
+          ),
+        );
+      }
+
+      add('day-start', startOfDay, 10);
+      add(
+        'day-end-minus-microsecond',
+        endOfDay.subtract(const Duration(microseconds: 1)),
+        20,
+      );
+      add('day-end-excluded', endOfDay, 30);
+      add(
+        'utc-local-day',
+        startOfDay.add(const Duration(hours: 1)).toUtc(),
+        40,
+      );
+      add('week-start', startOfWeek, 50);
+      add('week-end-excluded', endOfWeek, 60);
+      add('month-start', startOfMonth, 70);
+      add('month-end-excluded', endOfMonth, 80);
+
+      expect(
+        provider.expensesForDay(referenceDay).map((expense) => expense.id),
+        containsAll([
+          'day-start',
+          'day-end-minus-microsecond',
+          'utc-local-day',
+        ]),
+      );
+      expect(
+        provider.expensesForDay(referenceDay).map((expense) => expense.id),
+        isNot(contains('day-end-excluded')),
+      );
+      expect(
+        provider.expensesForWeek(referenceDay).map((expense) => expense.id),
+        containsAll(['week-start', 'day-start', 'day-end-excluded']),
+      );
+      expect(
+        provider.expensesForWeek(referenceDay).map((expense) => expense.id),
+        isNot(contains('week-end-excluded')),
+      );
+      expect(
+        provider.expensesForMonth(referenceDay).map((expense) => expense.id),
+        containsAll(['month-start', 'day-start', 'week-end-excluded']),
+      );
+      expect(
+        provider.expensesForMonth(referenceDay).map((expense) => expense.id),
+        isNot(contains('month-end-excluded')),
+      );
+    });
+
     test('updates and deletes existing expenses by id', () {
       final provider = ExpenseProvider();
       final expense = ExpenseEntry(

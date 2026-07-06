@@ -5,9 +5,12 @@ import 'app_providers.dart';
 import 'app_routes.dart';
 import 'app_theme.dart';
 import 'providers/app_state_provider.dart';
+import 'widgets/budget_exceeded_popup_presenter.dart';
 
 class SpendlyApp extends StatelessWidget {
   const SpendlyApp({super.key});
+
+  static final _navigatorKey = GlobalKey<NavigatorState>();
 
   @override
   Widget build(BuildContext context) {
@@ -20,6 +23,7 @@ class SpendlyApp extends StatelessWidget {
             theme: AppTheme.light,
             darkTheme: AppTheme.dark,
             themeMode: appState.themeMode,
+            navigatorKey: _navigatorKey,
             initialRoute: AppRoutes.authGate,
             routes: AppRoutes.routes,
             onGenerateRoute: AppRoutes.onGenerateRoute,
@@ -27,7 +31,10 @@ class SpendlyApp extends StatelessWidget {
               return GestureDetector(
                 behavior: HitTestBehavior.translucent,
                 onTap: () => FocusManager.instance.primaryFocus?.unfocus(),
-                child: child,
+                child: BudgetExceededPopupPresenter(
+                  navigatorKey: _navigatorKey,
+                  child: child ?? const SizedBox.shrink(),
+                ),
               );
             },
           );

@@ -5,6 +5,7 @@ import '../../../core/theme/app_spacing.dart';
 import '../models/expense_category.dart';
 import 'category_add_tile.dart';
 import 'category_picker_tile.dart';
+import 'expense_theme.dart';
 import 'expense_sheet_frame.dart';
 import 'expense_sheet_header.dart';
 import 'mint_action_button.dart';
@@ -33,6 +34,7 @@ class _CategoryPickerStepState extends State<CategoryPickerStep> {
   final _searchController = TextEditingController();
   var _query = '';
   late var _selectedCategory = widget.selectedCategory;
+  String? _errorText;
 
   @override
   void dispose() {
@@ -68,11 +70,21 @@ class _CategoryPickerStepState extends State<CategoryPickerStep> {
       return;
     }
 
-    final category = await widget.onCreateCategory(label);
-    if (!mounted) {
-      return;
+    try {
+      final category = await widget.onCreateCategory(label);
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _selectedCategory = category;
+        _errorText = null;
+      });
+    } catch (_) {
+      if (!mounted) {
+        return;
+      }
+      setState(() => _errorText = 'Could not save category. Please try again.');
     }
-    setState(() => _selectedCategory = category);
   }
 
   ExpenseCategory? _matchingCategoryFor(String label) {
@@ -100,24 +112,28 @@ class _CategoryPickerStepState extends State<CategoryPickerStep> {
           const SizedBox(height: AppSpacing.md),
           TextField(
             controller: _searchController,
-            onChanged: (value) => setState(() => _query = value),
+            onChanged: (value) => setState(() {
+              _query = value;
+              _errorText = null;
+            }),
             decoration: InputDecoration(
               hintText: 'Search categories',
-              prefixIcon: const Icon(
+              prefixIcon: Icon(
                 Icons.search_rounded,
-                color: AppColors.inkSubtle,
+                color: ExpenseTheme.subtle(context),
               ),
               filled: true,
-              fillColor: Theme.of(context).brightness == Brightness.dark
-                  ? AppColors.darkSurface
-                  : AppColors.card,
+              fillColor: ExpenseTheme.surface(context),
               contentPadding: const EdgeInsets.symmetric(
                 horizontal: AppSpacing.sm,
                 vertical: AppSpacing.sm,
               ),
               enabledBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(14),
-                borderSide: const BorderSide(color: AppColors.line, width: 1.5),
+                borderSide: BorderSide(
+                  color: ExpenseTheme.outline(context),
+                  width: 1.5,
+                ),
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(14),
@@ -125,6 +141,16 @@ class _CategoryPickerStepState extends State<CategoryPickerStep> {
               ),
             ),
           ),
+          if (_errorText != null) ...[
+            const SizedBox(height: AppSpacing.xs),
+            Text(
+              _errorText!,
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: AppColors.danger,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+          ],
           const SizedBox(height: AppSpacing.md),
           Expanded(
             child: GridView.builder(

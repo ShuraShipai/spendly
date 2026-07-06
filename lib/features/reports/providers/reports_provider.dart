@@ -27,13 +27,14 @@ class ReportsProvider {
 
   String monthlyCsv(DateTime referenceDate) {
     final rows = [
-      ['Date', 'Category', 'Payment method', 'Amount', 'Note'],
+      ['Date', 'Category', 'Payment method', 'Amount', 'Currency', 'Note'],
       for (final expense in _monthlyExpenses(referenceDate))
         [
           _dateValue(expense.date),
           expense.category.label,
           expense.paymentMethod.label,
           _amountValue(expense.amount),
+          expense.currencyCode,
           expense.note ?? '',
         ],
     ];

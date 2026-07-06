@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
+import 'expense_theme.dart';
 
 class ExpenseSearchField extends StatelessWidget {
   const ExpenseSearchField({
@@ -17,7 +18,7 @@ class ExpenseSearchField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
 
     return Row(
@@ -25,12 +26,12 @@ class ExpenseSearchField extends StatelessWidget {
         Expanded(
           child: DecoratedBox(
             decoration: BoxDecoration(
-              color: isDark ? AppColors.darkSurface : AppColors.card,
+              color: ExpenseTheme.surface(context),
               border: Border.all(color: AppColors.mint, width: 1.5),
               borderRadius: BorderRadius.circular(14),
-              boxShadow: const [
+              boxShadow: [
                 BoxShadow(
-                  color: AppColors.mintTint,
+                  color: colorScheme.primaryContainer,
                   blurRadius: 0,
                   spreadRadius: 4,
                 ),
@@ -41,14 +42,14 @@ class ExpenseSearchField extends StatelessWidget {
               onChanged: onChanged,
               autofocus: true,
               style: textTheme.bodySmall?.copyWith(
-                color: isDark ? AppColors.darkInk : AppColors.ink,
+                color: colorScheme.onSurface,
                 fontSize: 13,
                 fontWeight: FontWeight.w700,
               ),
               decoration: InputDecoration(
                 hintText: 'Search expenses',
                 hintStyle: textTheme.bodySmall?.copyWith(
-                  color: AppColors.inkSubtle,
+                  color: ExpenseTheme.subtle(context),
                   fontSize: 13,
                   fontWeight: FontWeight.w600,
                 ),
@@ -75,7 +76,7 @@ class ExpenseSearchField extends StatelessWidget {
           child: Text(
             'Cancel',
             style: textTheme.bodyMedium?.copyWith(
-              color: AppColors.inkMuted,
+              color: ExpenseTheme.muted(context),
               fontSize: 14,
               fontWeight: FontWeight.w800,
             ),

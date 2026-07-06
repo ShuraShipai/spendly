@@ -96,10 +96,10 @@ class AddExpenseFlowController extends ChangeNotifier {
       return categories[existingIndex];
     }
 
-    categories = [...categories, customCategory];
     if (userId != null && service != null) {
       await service.saveCustomCategory(userId, customCategory);
     }
+    categories = [...categories, customCategory];
     notifyListeners();
     return customCategory;
   }
@@ -154,8 +154,11 @@ class AddExpenseFlowController extends ChangeNotifier {
         note: note.trim().isEmpty ? null : note.trim(),
       );
 
-      expenseProvider?.addExpense(expense);
-      savedExpense = expense;
+      final saved = await expenseProvider?.saveExpense(expense);
+      if (expenseProvider != null && saved == null) {
+        return false;
+      }
+      savedExpense = saved ?? expense;
       step = AddExpenseStep.celebration;
       return true;
     } finally {

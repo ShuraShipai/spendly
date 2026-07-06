@@ -21,8 +21,13 @@ import '../widgets/expense_sort_sheet.dart';
 import '../widgets/mint_action_button.dart';
 
 class ExpenseListScreen extends StatefulWidget {
-  const ExpenseListScreen({this.onSearchModeChanged, super.key});
+  const ExpenseListScreen({
+    this.temporaryStateResetToken = 0,
+    this.onSearchModeChanged,
+    super.key,
+  });
 
+  final int temporaryStateResetToken;
   final ValueChanged<bool>? onSearchModeChanged;
 
   @override
@@ -43,6 +48,14 @@ class _ExpenseListScreenState extends State<ExpenseListScreen> {
   void dispose() {
     _searchController.dispose();
     super.dispose();
+  }
+
+  @override
+  void didUpdateWidget(covariant ExpenseListScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.temporaryStateResetToken != widget.temporaryStateResetToken) {
+      _resetTemporaryState();
+    }
   }
 
   @override
@@ -232,6 +245,11 @@ class _ExpenseListScreenState extends State<ExpenseListScreen> {
   }
 
   void _cancelSearch() {
+    _resetTemporaryState();
+    widget.onSearchModeChanged?.call(false);
+  }
+
+  void _resetTemporaryState() {
     _searchController.clear();
     setState(() {
       _query = '';
@@ -239,7 +257,6 @@ class _ExpenseListScreenState extends State<ExpenseListScreen> {
       _showAmountFilter = false;
       _amountRange = null;
     });
-    widget.onSearchModeChanged?.call(false);
   }
 
   void _clearFilters() {

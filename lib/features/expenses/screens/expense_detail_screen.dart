@@ -36,10 +36,7 @@ class ExpenseDetailScreen extends StatelessWidget {
           ),
           child: Column(
             children: [
-              ExpenseDetailHeader(
-                onBack: () => Navigator.of(context).pop(),
-                onMore: () => _confirmAndDeleteExpense(context, expense),
-              ),
+              ExpenseDetailHeader(onBack: () => Navigator.of(context).pop()),
               const SizedBox(height: AppSpacing.xl),
               ExpenseHeroAmount(expense: expense),
               const SizedBox(height: AppSpacing.xl),

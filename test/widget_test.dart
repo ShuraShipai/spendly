@@ -7,10 +7,14 @@ import 'package:spendly/features/auth/constants/auth_constants.dart';
 import 'package:spendly/features/auth/constants/auth_validators.dart';
 import 'package:spendly/features/auth/models/password_strength.dart';
 import 'package:spendly/features/auth/screens/welcome_screen.dart';
+import 'package:spendly/features/expenses/models/expense_category.dart';
+import 'package:spendly/features/expenses/models/expense_entry.dart';
+import 'package:spendly/features/expenses/models/payment_method.dart';
 import 'package:spendly/features/expenses/providers/expense_provider.dart';
 import 'package:spendly/features/expenses/services/custom_category_service.dart';
 import 'package:spendly/features/expenses/widgets/add_expense_flow_sheet.dart';
 import 'package:spendly/features/home/widgets/email_verification_banner.dart';
+import 'package:spendly/features/home/widgets/recent_expenses_list.dart';
 
 void main() {
   test('validates auth form values', () {
@@ -120,6 +124,110 @@ void main() {
 
     expect(find.text('New expense'), findsOneWidget);
     expect(find.text('₹0'), findsOneWidget);
+  });
+
+  testWidgets('keeps the note field visible above the keyboard', (
+    WidgetTester tester,
+  ) async {
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(390, 700);
+    addTearDown(tester.view.reset);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.light,
+        home: const Scaffold(body: AddExpenseFlowSheet()),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final noteField = find.byType(TextField).last;
+    await tester.tap(noteField);
+    await tester.pump();
+
+    tester.view.viewInsets = const FakeViewPadding(bottom: 320);
+    await tester.pumpAndSettle();
+
+    final noteRect = tester.getRect(noteField);
+    final saveRect = tester.getRect(find.text('Save expense'));
+
+    expect(tester.takeException(), isNull);
+    expect(noteRect.bottom, lessThanOrEqualTo(saveRect.top));
+    expect(saveRect.bottom, lessThanOrEqualTo(700));
+  });
+
+  testWidgets('renders every supplied recent expense', (
+    WidgetTester tester,
+  ) async {
+    final expenses = [
+      for (var index = 1; index <= 4; index++)
+        ExpenseEntry(
+          id: 'expense-$index',
+          amount: index * 100,
+          category: ExpenseCategory.food,
+          date: DateTime(2026, 7, index),
+          paymentMethod: PaymentMethod.cash,
+          note: 'Expense $index',
+        ),
+    ];
+
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.light,
+        home: Scaffold(body: RecentExpensesList(expenses: expenses)),
+      ),
+    );
+
+    expect(find.text('Expense 1'), findsOneWidget);
+    expect(find.text('Expense 2'), findsOneWidget);
+    expect(find.text('Expense 3'), findsOneWidget);
+    expect(find.text('Expense 4'), findsOneWidget);
+  });
+
+  testWidgets('renders recent expense cards in light and dark themes', (
+    WidgetTester tester,
+  ) async {
+    final expenses = [
+      ExpenseEntry(
+        id: 'coffee',
+        amount: 120,
+        category: ExpenseCategory.food,
+        date: DateTime(2026, 7, 2),
+        paymentMethod: PaymentMethod.cash,
+        note: 'Coffee',
+      ),
+    ];
+
+    Future<Color> cardColorFor(ThemeMode themeMode) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Theme(
+            data: themeMode == ThemeMode.dark ? AppTheme.dark : AppTheme.light,
+            child: Scaffold(body: RecentExpensesList(expenses: expenses)),
+          ),
+        ),
+      );
+
+      final cardBox = tester.widget<DecoratedBox>(
+        find
+            .descendant(
+              of: find.byType(RecentExpensesList),
+              matching: find.byType(DecoratedBox),
+            )
+            .first,
+      );
+      final cardDecoration = cardBox.decoration as BoxDecoration;
+      return cardDecoration.color!;
+    }
+
+    expect(
+      await cardColorFor(ThemeMode.light),
+      AppTheme.light.colorScheme.surface,
+    );
+    expect(
+      await cardColorFor(ThemeMode.dark),
+      AppTheme.dark.colorScheme.surface,
+    );
   });
 
   testWidgets('adds quick amount chips to the current amount', (

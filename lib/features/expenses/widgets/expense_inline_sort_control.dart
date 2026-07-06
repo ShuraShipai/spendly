@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-import '../../../core/theme/app_colors.dart';
 import '../models/expense_sort_option.dart';
+import 'expense_theme.dart';
 
 class ExpenseInlineSortControl extends StatelessWidget {
   const ExpenseInlineSortControl({
@@ -25,7 +25,7 @@ class ExpenseInlineSortControl extends StatelessWidget {
           style: textTheme.labelMedium?.copyWith(
             fontSize: 12,
             fontWeight: FontWeight.w800,
-            color: AppColors.inkMuted,
+            color: ExpenseTheme.muted(context),
           ),
         ),
         InkWell(
@@ -40,13 +40,13 @@ class ExpenseInlineSortControl extends StatelessWidget {
                   style: textTheme.labelMedium?.copyWith(
                     fontSize: 12,
                     fontWeight: FontWeight.w800,
-                    color: AppColors.mintDark,
+                    color: ExpenseTheme.onMintContainer(context),
                   ),
                 ),
                 const SizedBox(width: 5),
-                const Icon(
+                Icon(
                   Icons.keyboard_arrow_down_rounded,
-                  color: AppColors.mintDark,
+                  color: ExpenseTheme.onMintContainer(context),
                   size: 13,
                 ),
               ],

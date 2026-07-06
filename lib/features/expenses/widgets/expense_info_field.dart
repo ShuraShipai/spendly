@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
+import 'expense_theme.dart';
 import 'section_label.dart';
 
 class ExpenseInfoField extends StatelessWidget {
@@ -28,8 +29,9 @@ class ExpenseInfoField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final borderColor = hasError ? AppColors.danger : AppColors.line;
+    final borderColor = hasError
+        ? AppColors.danger
+        : ExpenseTheme.outline(context);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -37,7 +39,7 @@ class ExpenseInfoField extends StatelessWidget {
         SectionLabel(label),
         const SizedBox(height: AppSpacing.xs),
         Material(
-          color: isDark ? AppColors.darkSurface : AppColors.card,
+          color: ExpenseTheme.surface(context),
           borderRadius: BorderRadius.circular(13),
           child: InkWell(
             onTap: onTap,
@@ -73,16 +75,16 @@ class ExpenseInfoField extends StatelessWidget {
                       overflow: TextOverflow.ellipsis,
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
                         color: value.isEmpty
-                            ? AppColors.inkSubtle
+                            ? ExpenseTheme.subtle(context)
                             : Theme.of(context).textTheme.titleMedium?.color,
                         fontWeight: FontWeight.w800,
                       ),
                     ),
                   ),
                   if (onTap != null || showDisclosure)
-                    const Icon(
+                    Icon(
                       Icons.keyboard_arrow_down_rounded,
-                      color: AppColors.inkSubtle,
+                      color: ExpenseTheme.subtle(context),
                       size: 18,
                     ),
                 ],

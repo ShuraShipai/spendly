@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../models/expense_filter_chip_data.dart';
+import 'expense_theme.dart';
 
 class ExpenseFilterSummary extends StatelessWidget {
   const ExpenseFilterSummary({
@@ -25,6 +26,7 @@ class ExpenseFilterSummary extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
+    final colorScheme = Theme.of(context).colorScheme;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -34,7 +36,7 @@ class ExpenseFilterSummary extends StatelessWidget {
           style: textTheme.labelMedium?.copyWith(
             fontSize: 12,
             fontWeight: FontWeight.w800,
-            color: AppColors.inkMuted,
+            color: ExpenseTheme.muted(context),
           ),
         ),
         const SizedBox(height: AppSpacing.xs),
@@ -62,15 +64,15 @@ class ExpenseFilterSummary extends StatelessWidget {
                         Text(
                           filter.label,
                           style: textTheme.labelSmall?.copyWith(
-                            color: Colors.white,
+                            color: colorScheme.onPrimary,
                             fontSize: 11.5,
                             fontWeight: FontWeight.w800,
                           ),
                         ),
                         const SizedBox(width: 5),
-                        const Icon(
+                        Icon(
                           Icons.close_rounded,
-                          color: Colors.white,
+                          color: colorScheme.onPrimary,
                           size: 11,
                         ),
                       ],
@@ -85,7 +87,7 @@ class ExpenseFilterSummary extends StatelessWidget {
               TextButton(
                 onPressed: onClearAll,
                 style: TextButton.styleFrom(
-                  foregroundColor: AppColors.inkMuted,
+                  foregroundColor: ExpenseTheme.muted(context),
                   tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                   visualDensity: VisualDensity.compact,
                 ),
@@ -104,8 +106,8 @@ class ExpenseFilterSummary extends StatelessWidget {
   }) {
     final chip = DecoratedBox(
       decoration: BoxDecoration(
-        color: AppColors.card,
-        border: Border.all(color: AppColors.line, width: 1.5),
+        color: ExpenseTheme.surface(context),
+        border: Border.all(color: ExpenseTheme.outline(context), width: 1.5),
         borderRadius: BorderRadius.circular(11),
       ),
       child: Padding(
@@ -113,7 +115,7 @@ class ExpenseFilterSummary extends StatelessWidget {
         child: Text(
           label,
           style: Theme.of(context).textTheme.labelSmall?.copyWith(
-            color: AppColors.inkMuted,
+            color: ExpenseTheme.muted(context),
             fontSize: 11.5,
             fontWeight: FontWeight.w800,
           ),

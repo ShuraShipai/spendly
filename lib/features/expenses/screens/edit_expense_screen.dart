@@ -4,12 +4,14 @@ import 'package:provider/provider.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../models/expense_category.dart';
+import '../models/expense_entry.dart';
 import '../models/payment_method.dart';
 import '../providers/expense_provider.dart';
 import '../widgets/category_chip.dart';
 import '../widgets/edit_amount_editor.dart';
 import '../widgets/edit_expense_header.dart';
 import '../widgets/expense_info_field.dart';
+import '../widgets/expense_theme.dart';
 import '../widgets/mint_action_button.dart';
 import '../widgets/section_label.dart';
 
@@ -25,40 +27,28 @@ class EditExpenseScreen extends StatefulWidget {
 class _EditExpenseScreenState extends State<EditExpenseScreen> {
   late final TextEditingController _amountController;
   late final TextEditingController _noteController;
-  late ExpenseCategory _category;
-  late DateTime _date;
-  late PaymentMethod _paymentMethod;
+  var _category = ExpenseCategory.food;
+  var _date = DateTime.now();
+  var _paymentMethod = PaymentMethod.cash;
   var _loaded = false;
   String? _amountError;
 
   @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    if (_loaded) {
-      return;
-    }
-    _loaded = true;
-    final expense = context.read<ExpenseProvider>().expenseById(
-      widget.expenseId,
-    );
-    if (expense == null) {
-      _amountController = TextEditingController(text: '0');
-      _noteController = TextEditingController();
-      _category = ExpenseCategory.food;
-      _date = DateTime.now();
-      _paymentMethod = PaymentMethod.cash;
-      return;
-    }
+  void initState() {
+    super.initState();
+    _amountController = TextEditingController();
+    _noteController = TextEditingController();
+  }
 
-    _amountController = TextEditingController(
-      text: expense.amount == expense.amount.roundToDouble()
-          ? expense.amount.round().toString()
-          : expense.amount.toStringAsFixed(2),
-    );
-    _noteController = TextEditingController(text: expense.note ?? '');
+  void _loadExpense(ExpenseEntry expense) {
+    _amountController.text = expense.amount == expense.amount.roundToDouble()
+        ? expense.amount.round().toString()
+        : expense.amount.toStringAsFixed(2);
+    _noteController.text = expense.note ?? '';
     _category = expense.category;
     _date = expense.date;
     _paymentMethod = expense.paymentMethod;
+    _loaded = true;
   }
 
   @override
@@ -70,11 +60,20 @@ class _EditExpenseScreenState extends State<EditExpenseScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final expense = context.watch<ExpenseProvider>().expenseById(
-      widget.expenseId,
-    );
+    final expenseProvider = context.watch<ExpenseProvider>();
+    final expense = expenseProvider.expenseById(widget.expenseId);
     if (expense == null) {
-      return const Scaffold(body: Center(child: Text('Expense not found')));
+      return Scaffold(
+        body: Center(
+          child: expenseProvider.isLoading
+              ? const CircularProgressIndicator()
+              : const Text('Expense not found'),
+        ),
+      );
+    }
+
+    if (!_loaded) {
+      _loadExpense(expense);
     }
 
     final categories = [
@@ -214,25 +213,26 @@ class _EditExpenseScreenState extends State<EditExpenseScreen> {
       note: note.isEmpty ? null : note,
     );
 
-    navigator.popUntil((route) => route.isFirst);
     expenseProvider.updateExpense(updatedExpense);
+    navigator.popUntil((route) => route.isFirst);
   }
 
   InputDecoration _fieldDecoration(BuildContext context, String hintText) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
     return InputDecoration(
       hintText: hintText,
       hintStyle: Theme.of(context).textTheme.bodySmall,
       filled: true,
-      fillColor: isDark ? AppColors.darkSurface : AppColors.card,
+      fillColor: ExpenseTheme.surface(context),
       contentPadding: const EdgeInsets.symmetric(
         horizontal: AppSpacing.md,
         vertical: AppSpacing.sm,
       ),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(13),
-        borderSide: const BorderSide(color: AppColors.line, width: 1.5),
+        borderSide: BorderSide(
+          color: ExpenseTheme.outline(context),
+          width: 1.5,
+        ),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(13),

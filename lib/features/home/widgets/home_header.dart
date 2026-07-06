@@ -1,15 +1,19 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/widgets/user_profile_avatar.dart';
+
 class HomeHeader extends StatelessWidget {
   const HomeHeader({
     required this.greeting,
     required this.displayName,
     required this.onProfileTap,
+    this.photoUrl,
     super.key,
   });
 
   final String greeting;
   final String? displayName;
+  final String? photoUrl;
   final VoidCallback onProfileTap;
 
   @override
@@ -38,29 +42,16 @@ class HomeHeader extends StatelessWidget {
           child: Material(
             color: Colors.transparent,
             shape: const CircleBorder(),
-            child: Ink(
-              decoration: const BoxDecoration(
-                shape: BoxShape.circle,
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [Color(0xFFB0A4F5), Color(0xFF8C7DF0)],
-                ),
-              ),
-              child: InkResponse(
-                onTap: onProfileTap,
-                customBorder: const CircleBorder(),
-                child: SizedBox.square(
-                  dimension: 36,
-                  child: Center(
-                    child: Text(
-                      initial,
-                      style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w900,
-                      ),
-                    ),
-                  ),
+            child: InkResponse(
+              onTap: onProfileTap,
+              customBorder: const CircleBorder(),
+              child: UserProfileAvatar(
+                initial: initial,
+                photoUrl: photoUrl,
+                dimension: 36,
+                textStyle: Theme.of(context).textTheme.labelLarge?.copyWith(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w900,
                 ),
               ),
             ),

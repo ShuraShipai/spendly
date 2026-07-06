@@ -10,6 +10,7 @@ import '../features/expenses/screens/edit_expense_screen.dart';
 import '../features/expenses/screens/expense_detail_screen.dart';
 import '../features/settings/screens/categories_screen.dart';
 import '../features/settings/screens/category_budgets_screen.dart';
+import '../features/settings/screens/notifications_screen.dart';
 import '../features/settings/screens/settings_screen.dart';
 import 'main_navigation_screen.dart';
 
@@ -26,6 +27,7 @@ class AppRoutes {
   static const settings = '/settings';
   static const categories = '/settings/categories';
   static const categoryBudgets = '/settings/category-budgets';
+  static const notifications = '/settings/notifications';
   static const expenseDetail = '/expenses/detail';
   static const editExpense = '/expenses/edit';
 
@@ -42,6 +44,7 @@ class AppRoutes {
       settings: (_) => const Scaffold(body: SettingsScreen()),
       categories: (_) => const CategoriesScreen(),
       categoryBudgets: (_) => const CategoryBudgetsScreen(),
+      notifications: (_) => const NotificationsScreen(),
     };
   }
 

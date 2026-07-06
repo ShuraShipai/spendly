@@ -83,6 +83,27 @@ class ExpenseCategory {
     travel,
   ];
 
+  static ExpenseCategory byId(
+    String id, {
+    String? labelSnapshot,
+    int? colorArgbSnapshot,
+  }) {
+    for (final category in defaults) {
+      if (category.id == id) {
+        return category;
+      }
+    }
+
+    return ExpenseCategory(
+      id: id,
+      label: labelSnapshot == null || labelSnapshot.isEmpty
+          ? id
+          : labelSnapshot,
+      color: Color(colorArgbSnapshot ?? AppColors.mint.toARGB32()),
+      icon: Icons.sell_rounded,
+    );
+  }
+
   bool get isCustom => !defaults.any((category) => category.id == id);
 
   bool hasSameLabel(String otherLabel) {
@@ -127,7 +148,16 @@ class ExpenseCategory {
   }
 
   Map<String, Object?> toMap() {
-    return {'id': id, 'label': label, 'color': color.toARGB32()};
+    return {
+      'id': id,
+      'label': label,
+      'color': color.toARGB32(),
+      'colorArgb': color.toARGB32(),
+      'iconKey': isCustom ? 'sell' : id,
+      'isSystem': !isCustom,
+      'isQuick': quickDefaults.any((category) => category.id == id),
+      'isArchived': false,
+    };
   }
 
   @override

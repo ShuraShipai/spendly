@@ -38,10 +38,7 @@ class ExpenseSortSheet extends StatelessWidget {
                 contentPadding: EdgeInsets.zero,
                 title: Text(option.label),
                 trailing: option == selectedOption
-                    ? const Icon(
-                        Icons.check_circle_rounded,
-                        color: AppColors.mint,
-                      )
+                    ? Icon(Icons.check_circle_rounded, color: AppColors.mint)
                     : null,
                 onTap: () => onSelected(option),
               ),

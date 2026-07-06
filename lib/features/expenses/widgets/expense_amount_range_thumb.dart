@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/theme/app_colors.dart';
+import 'expense_theme.dart';
 
 class ExpenseAmountRangeThumb extends StatelessWidget {
   const ExpenseAmountRangeThumb({super.key});
@@ -9,7 +10,7 @@ class ExpenseAmountRangeThumb extends StatelessWidget {
   Widget build(BuildContext context) {
     return DecoratedBox(
       decoration: BoxDecoration(
-        color: AppColors.card,
+        color: ExpenseTheme.surface(context),
         shape: BoxShape.circle,
         border: Border.all(color: AppColors.mint, width: 3),
       ),

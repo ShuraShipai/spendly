@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
+import 'expense_theme.dart';
 
 class ExpenseInfoRow extends StatelessWidget {
   const ExpenseInfoRow({
@@ -23,7 +23,7 @@ class ExpenseInfoRow extends StatelessWidget {
       decoration: BoxDecoration(
         border: isLast
             ? null
-            : const Border(bottom: BorderSide(color: AppColors.line)),
+            : Border(bottom: BorderSide(color: ExpenseTheme.outline(context))),
       ),
       child: Padding(
         padding: const EdgeInsets.symmetric(
@@ -35,9 +35,9 @@ class ExpenseInfoRow extends StatelessWidget {
             Expanded(
               child: Text(
                 label,
-                style: Theme.of(
-                  context,
-                ).textTheme.bodySmall?.copyWith(color: AppColors.inkSubtle),
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: ExpenseTheme.subtle(context),
+                ),
               ),
             ),
             if (color != null) ...[

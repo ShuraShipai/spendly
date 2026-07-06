@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
+import 'expense_theme.dart';
 
 class EmptyExpensesList extends StatelessWidget {
   const EmptyExpensesList({
@@ -21,7 +21,7 @@ class EmptyExpensesList extends StatelessWidget {
         children: [
           Icon(
             Icons.receipt_long_rounded,
-            color: AppColors.inkSubtle,
+            color: ExpenseTheme.subtle(context),
             size: 54,
           ),
           const SizedBox(height: AppSpacing.sm),

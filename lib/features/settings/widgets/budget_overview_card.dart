@@ -50,7 +50,7 @@ class BudgetOverviewCard extends StatelessWidget {
                   ),
                 ),
                 Text(
-                  hasLimit ? '$percent%' : 'Unlimited',
+                  hasLimit ? '$percent%' : 'No limit',
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
                     color: hasLimit && percent >= 90
                         ? AppColors.danger
@@ -114,7 +114,7 @@ class BudgetOverviewCard extends StatelessWidget {
             Text(
               hasLimit
                   ? '${_formatAmount(remaining)} left · ${progress >= 0.9 ? 'review soon' : 'on track'}'
-                  : 'Unlimited budget active',
+                  : 'No limit',
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
                 color: AppColors.inkSubtle,
                 fontWeight: FontWeight.w700,
