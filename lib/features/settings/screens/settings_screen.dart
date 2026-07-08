@@ -4,6 +4,8 @@ import 'package:provider/provider.dart';
 import '../../../app/app_routes.dart';
 import '../../../app/providers/app_state_provider.dart';
 import '../../auth/providers/auth_provider.dart';
+import '../../reports/providers/reports_provider.dart';
+import '../../reports/widgets/export_report_dialog.dart';
 import '../widgets/destructive_confirmation_dialog.dart';
 import '../widgets/edit_profile_sheet.dart';
 import '../widgets/settings_body.dart';
@@ -36,11 +38,7 @@ class SettingsScreen extends StatelessWidget {
       onBudgetAlertsChanged: context
           .read<AppStateProvider>()
           .setBudgetAlertsEnabled,
-      onExportData: () {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Open Insights to export monthly CSV.')),
-        );
-      },
+      onExportData: () => _showExportDialog(context),
       onSignOut: () => _confirmSignOut(context),
       onDeleteAccount: () => _confirmDeleteAccount(context),
       onShowOptionSheet:
@@ -56,6 +54,15 @@ class SettingsScreen extends StatelessWidget {
             selectedValue: selectedValue,
             onSelected: onSelected,
           ),
+    );
+  }
+
+  void _showExportDialog(BuildContext context) {
+    final reportsProvider = context.read<ReportsProvider>();
+    showDialog<void>(
+      context: context,
+      builder: (_) =>
+          ExportReportDialog(csv: reportsProvider.monthlyCsv(DateTime.now())),
     );
   }
 
