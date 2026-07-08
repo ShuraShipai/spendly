@@ -8,12 +8,14 @@ class ExpenseCategory {
     required this.label,
     required this.color,
     required this.icon,
-  });
+    String? iconKey,
+  }) : iconKey = iconKey ?? id;
 
   final String id;
   final String label;
   final Color color;
   final IconData icon;
+  final String iconKey;
 
   static const food = ExpenseCategory(
     id: 'food',
@@ -87,6 +89,7 @@ class ExpenseCategory {
     String id, {
     String? labelSnapshot,
     int? colorArgbSnapshot,
+    String? iconKeySnapshot,
   }) {
     for (final category in defaults) {
       if (category.id == id) {
@@ -100,7 +103,13 @@ class ExpenseCategory {
           ? id
           : labelSnapshot,
       color: Color(colorArgbSnapshot ?? AppColors.mint.toARGB32()),
-      icon: Icons.sell_rounded,
+      icon: CustomCategoryIconResolver.iconFor(
+        iconKeySnapshot ??
+            CustomCategoryIconResolver.iconKeyFor(labelSnapshot ?? id),
+      ),
+      iconKey:
+          iconKeySnapshot ??
+          CustomCategoryIconResolver.iconKeyFor(labelSnapshot ?? id),
     );
   }
 
@@ -127,23 +136,40 @@ class ExpenseCategory {
   factory ExpenseCategory.custom({
     required String label,
     required Color color,
+    Iterable<ExpenseCategory> existingCategories = const [],
   }) {
     final trimmedLabel = label.trim();
+    final iconKey = CustomCategoryIconResolver.iconKeyFor(
+      trimmedLabel,
+      usedIconKeys: existingCategories
+          .where((category) => category.isCustom)
+          .map((category) => category.iconKey),
+    );
 
     return ExpenseCategory(
       id: customIdFor(trimmedLabel),
       label: trimmedLabel,
       color: color,
-      icon: Icons.sell_rounded,
+      icon: CustomCategoryIconResolver.iconFor(iconKey),
+      iconKey: iconKey,
     );
   }
 
   factory ExpenseCategory.fromMap(Map<String, dynamic> map) {
+    final id = map['id'] as String;
+    final label = map['label'] as String;
+    final iconKey =
+        map['iconKey'] as String? ??
+        (ExpenseCategory.defaults.any((category) => category.id == id)
+            ? id
+            : CustomCategoryIconResolver.iconKeyFor(label));
+
     return ExpenseCategory(
-      id: map['id'] as String,
-      label: map['label'] as String,
+      id: id,
+      label: label,
       color: Color(map['color'] as int),
-      icon: Icons.sell_rounded,
+      icon: CustomCategoryIconResolver.iconFor(iconKey),
+      iconKey: iconKey,
     );
   }
 
@@ -153,7 +179,7 @@ class ExpenseCategory {
       'label': label,
       'color': color.toARGB32(),
       'colorArgb': color.toARGB32(),
-      'iconKey': isCustom ? 'sell' : id,
+      'iconKey': iconKey,
       'isSystem': !isCustom,
       'isQuick': quickDefaults.any((category) => category.id == id),
       'isArchived': false,
@@ -167,4 +193,89 @@ class ExpenseCategory {
 
   @override
   int get hashCode => id.hashCode;
+}
+
+class CustomCategoryIconResolver {
+  const CustomCategoryIconResolver._();
+
+  static const _fallbackIconKeys = [
+    'star',
+    'work',
+    'school',
+    'fitness',
+    'savings',
+    'celebration',
+    'gaming',
+    'palette',
+    'music',
+    'park',
+  ];
+
+  static String iconKeyFor(
+    String label, {
+    Iterable<String> usedIconKeys = const [],
+  }) {
+    final normalized = ExpenseCategory.normalizedLabel(label);
+    for (final entry in _keywordIconKeys.entries) {
+      if (entry.key.any(normalized.contains)) {
+        return entry.value;
+      }
+    }
+
+    final usedFallbackKeys = usedIconKeys
+        .where(_fallbackIconKeys.contains)
+        .toSet();
+    for (final iconKey in _fallbackIconKeys) {
+      if (!usedFallbackKeys.contains(iconKey)) {
+        return iconKey;
+      }
+    }
+
+    return _fallbackIconKeys[_stableIndex(
+      normalized,
+      _fallbackIconKeys.length,
+    )];
+  }
+
+  static IconData iconFor(String iconKey) {
+    return _iconsByKey[iconKey] ?? Icons.sell_rounded;
+  }
+
+  static int _stableIndex(String value, int length) {
+    var hash = 0;
+    for (final codeUnit in value.codeUnits) {
+      hash = (hash * 31 + codeUnit) & 0x7fffffff;
+    }
+    return hash % length;
+  }
+
+  static final Map<List<String>, String> _keywordIconKeys = {
+    ['water', 'h2o']: 'water',
+    ['coffee', 'cafe', 'tea']: 'coffee',
+    ['pet', 'pets', 'dog', 'cat']: 'pets',
+    ['medicine', 'medical', 'health', 'doctor', 'pharmacy']: 'medical',
+    ['travel', 'trip', 'flight', 'hotel', 'vacation']: 'travel',
+    ['electricity', 'electric', 'power']: 'bolt',
+    ['bill', 'bills', 'utility', 'utilities']: 'bill',
+  };
+
+  static const Map<String, IconData> _iconsByKey = {
+    'water': Icons.water_drop_rounded,
+    'coffee': Icons.coffee_rounded,
+    'pets': Icons.pets_rounded,
+    'medical': Icons.medical_services_rounded,
+    'travel': Icons.flight_takeoff_rounded,
+    'bolt': Icons.bolt_rounded,
+    'bill': Icons.receipt_long_rounded,
+    'star': Icons.star_rounded,
+    'work': Icons.work_rounded,
+    'school': Icons.school_rounded,
+    'fitness': Icons.fitness_center_rounded,
+    'savings': Icons.savings_rounded,
+    'celebration': Icons.celebration_rounded,
+    'gaming': Icons.sports_esports_rounded,
+    'palette': Icons.palette_rounded,
+    'music': Icons.music_note_rounded,
+    'park': Icons.park_rounded,
+  };
 }

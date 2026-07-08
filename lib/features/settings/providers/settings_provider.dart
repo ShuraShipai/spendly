@@ -198,6 +198,7 @@ class SettingsProvider extends ChangeNotifier {
     final category = ExpenseCategory.custom(
       label: trimmedLabel,
       color: _nextCustomCategoryColor,
+      existingCategories: categories,
     );
     if (uid == null) {
       return category;

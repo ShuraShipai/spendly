@@ -53,6 +53,7 @@ class ExpenseEntry {
       categoryId,
       labelSnapshot: data['categoryLabelSnapshot'] as String?,
       colorArgbSnapshot: data['categoryColorArgbSnapshot'] as int?,
+      iconKeySnapshot: data['categoryIconKeySnapshot'] as String?,
     );
     final amountCents = data['amountCents'] as int? ?? 0;
     final occurredAt = data['occurredAt'];
@@ -84,6 +85,7 @@ class ExpenseEntry {
       'categoryId': category.id,
       'categoryLabelSnapshot': category.label,
       'categoryColorArgbSnapshot': category.color.toARGB32(),
+      'categoryIconKeySnapshot': category.iconKey,
       'paymentMethodId': paymentMethod.name,
       'occurredAt': Timestamp.fromDate(date),
       'note': note,

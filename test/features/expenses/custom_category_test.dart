@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:spendly/core/theme/app_colors.dart';
@@ -39,6 +40,69 @@ void main() {
       final restored = ExpenseCategory.fromMap(category.toMap());
 
       expect(restored, category);
+      expect(restored.iconKey, category.iconKey);
+      expect(restored.icon, category.icon);
+    });
+
+    test('resolves keyword icons for custom categories', () {
+      expect(
+        ExpenseCategory.custom(label: 'Water', color: AppColors.travel).icon,
+        Icons.water_drop_rounded,
+      );
+      expect(
+        ExpenseCategory.custom(label: 'Coffee', color: AppColors.travel).icon,
+        Icons.coffee_rounded,
+      );
+      expect(
+        ExpenseCategory.custom(label: 'Pet', color: AppColors.travel).icon,
+        Icons.pets_rounded,
+      );
+      expect(
+        ExpenseCategory.custom(label: 'Medicine', color: AppColors.travel).icon,
+        Icons.medical_services_rounded,
+      );
+      expect(
+        ExpenseCategory.custom(label: 'Trip', color: AppColors.travel).icon,
+        Icons.flight_takeoff_rounded,
+      );
+      expect(
+        ExpenseCategory.custom(
+          label: 'Electricity',
+          color: AppColors.travel,
+        ).icon,
+        Icons.bolt_rounded,
+      );
+    });
+
+    test('rotates fallback icons for unknown custom categories', () {
+      final alpha = ExpenseCategory.custom(
+        label: 'Alpha',
+        color: AppColors.travel,
+      );
+      final beta = ExpenseCategory.custom(
+        label: 'Beta',
+        color: AppColors.rent,
+        existingCategories: [alpha],
+      );
+      final gamma = ExpenseCategory.custom(
+        label: 'Gamma',
+        color: AppColors.health,
+        existingCategories: [alpha, beta],
+      );
+
+      expect({alpha.iconKey, beta.iconKey, gamma.iconKey}, hasLength(3));
+    });
+
+    test('restores custom category icons from stored icon keys', () {
+      final restored = ExpenseCategory.fromMap({
+        'id': 'custom-old',
+        'label': 'Old category',
+        'color': AppColors.travel.toARGB32(),
+        'iconKey': 'music',
+      });
+
+      expect(restored.iconKey, 'music');
+      expect(restored.icon, Icons.music_note_rounded);
     });
   });
 
@@ -114,6 +178,25 @@ void main() {
       expect(expenseWithNote.title, 'Bills expense');
       expect(expenseWithNote.subtitle, 'Electricity bill');
       expect(expenseWithoutNote.subtitle, 'Food');
+    });
+
+    test('stores category icon snapshots in Firestore maps', () {
+      final coffee = ExpenseCategory.custom(
+        label: 'Coffee',
+        color: AppColors.rent,
+      );
+      final expense = ExpenseEntry(
+        id: 'expense-1',
+        amount: 120,
+        category: coffee,
+        date: DateTime(2026, 7),
+        paymentMethod: PaymentMethod.upi,
+      );
+
+      expect(
+        expense.toFirestoreUpdateMap()['categoryIconKeySnapshot'],
+        coffee.iconKey,
+      );
     });
   });
 }

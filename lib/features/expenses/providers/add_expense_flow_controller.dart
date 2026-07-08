@@ -86,6 +86,7 @@ class AddExpenseFlowController extends ChangeNotifier {
     final customCategory = ExpenseCategory.custom(
       label: label,
       color: _colorForLabel(label),
+      existingCategories: categories,
     );
     final existingIndex = categories.indexWhere(
       (existing) =>
