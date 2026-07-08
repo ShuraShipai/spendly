@@ -7,6 +7,7 @@ import 'package:spendly/features/expenses/models/payment_method.dart';
 import 'package:spendly/features/expenses/providers/expense_provider.dart';
 import 'package:spendly/features/expenses/services/custom_category_service.dart';
 import 'package:spendly/features/settings/providers/budget_alert_provider.dart';
+import 'package:spendly/features/settings/services/budget_local_notification_service.dart';
 import 'package:spendly/features/settings/providers/settings_provider.dart';
 
 void main() {
@@ -47,8 +48,11 @@ void main() {
       expect(alerts.pendingAlert?.category, ExpenseCategory.food);
     });
 
-    test('does not repeat an acknowledged active exceeded state', () {
-      final alerts = BudgetAlertProvider();
+    test('fires once for an active overall threshold crossing', () {
+      final notifications = _FakeBudgetLocalNotificationService();
+      final alerts = BudgetAlertProvider(
+        localNotificationService: notifications,
+      );
       final expenses = ExpenseProvider();
       final settings = SettingsProvider(
         categoryService: CustomCategoryService.memory(),
@@ -82,6 +86,7 @@ void main() {
       );
 
       expect(alerts.pendingAlert, isNull);
+      expect(notifications.sent, hasLength(1));
 
       settings.setMonthlyBudget(110);
       alerts.updateAlerts(
@@ -91,7 +96,127 @@ void main() {
         referenceDate: month,
       );
 
+      expect(alerts.pendingAlert, isNull);
+      expect(notifications.sent, hasLength(1));
+
+      settings.setMonthlyBudget(200);
+      alerts.updateAlerts(
+        alertsEnabled: true,
+        expenseProvider: expenses,
+        settingsProvider: settings,
+        referenceDate: month,
+      );
+
+      expect(alerts.pendingAlert, isNull);
+      expect(notifications.sent, hasLength(1));
+
+      settings.setMonthlyBudget(140);
+      alerts.updateAlerts(
+        alertsEnabled: true,
+        expenseProvider: expenses,
+        settingsProvider: settings,
+        referenceDate: month,
+      );
+
       expect(alerts.pendingAlert?.type, BudgetExceededAlertType.overall);
+      expect(alerts.pendingAlert?.title, 'Heads up — 86% used');
+      expect(
+        alerts.pendingAlert?.message,
+        'You\'ve spent ₹120 of your ₹140 Overall budget this month.',
+      );
+      expect(notifications.sent, hasLength(2));
+      expect(notifications.sent.last.title, 'Heads up — 86% used');
+      expect(
+        notifications.sent.last.body,
+        'You\'ve spent ₹120 of your ₹140 Overall budget this month.',
+      );
+    });
+
+    test('fires once for custom category threshold crossing', () async {
+      final notifications = _FakeBudgetLocalNotificationService();
+      final alerts = BudgetAlertProvider(
+        localNotificationService: notifications,
+      );
+      final expenses = ExpenseProvider();
+      final settings = SettingsProvider(
+        categoryService: CustomCategoryService.memory(),
+      );
+      final month = DateTime(2026, 7);
+      final coffee = await settings.addCustomCategory(
+        uid: 'user-1',
+        label: 'Coffee',
+      );
+
+      settings.setCategoryBudget(coffee!.id, 1000);
+      expenses.addExpense(
+        ExpenseEntry(
+          id: 'coffee-1',
+          amount: 799,
+          category: coffee,
+          date: month,
+          paymentMethod: PaymentMethod.upi,
+        ),
+      );
+
+      alerts.updateAlerts(
+        alertsEnabled: true,
+        expenseProvider: expenses,
+        settingsProvider: settings,
+        referenceDate: month,
+      );
+
+      expect(alerts.pendingAlert, isNull);
+      expect(notifications.sent, isEmpty);
+
+      expenses.addExpense(
+        ExpenseEntry(
+          id: 'coffee-2',
+          amount: 1,
+          category: coffee,
+          date: month,
+          paymentMethod: PaymentMethod.upi,
+        ),
+      );
+      alerts.updateAlerts(
+        alertsEnabled: true,
+        expenseProvider: expenses,
+        settingsProvider: settings,
+        referenceDate: month,
+      );
+
+      expect(alerts.pendingAlert?.type, BudgetExceededAlertType.category);
+      expect(alerts.pendingAlert?.category, coffee);
+      expect(alerts.pendingAlert?.title, 'Heads up — 80% used');
+      expect(
+        alerts.pendingAlert?.message,
+        'You\'ve spent ₹800 of your ₹1000 Coffee budget this month.',
+      );
+      expect(notifications.sent, hasLength(1));
+      expect(notifications.sent.single.title, 'Heads up — 80% used');
+      expect(
+        notifications.sent.single.body,
+        'You\'ve spent ₹800 of your ₹1000 Coffee budget this month.',
+      );
+
+      alerts.markAlertShown(alerts.pendingAlert!.id);
+      expenses.addExpense(
+        ExpenseEntry(
+          id: 'coffee-3',
+          amount: 200,
+          category: coffee,
+          date: month,
+          paymentMethod: PaymentMethod.upi,
+        ),
+      );
+      alerts.updateAlerts(
+        alertsEnabled: true,
+        expenseProvider: expenses,
+        settingsProvider: settings,
+        referenceDate: month,
+      );
+
+      expect(alerts.pendingAlert, isNull);
+      expect(notifications.sent, hasLength(1));
     });
 
     test('clears pending alerts when budget alerts are disabled', () {
@@ -125,4 +250,30 @@ void main() {
       expect(alerts.pendingAlert, isNull);
     });
   });
+}
+
+class _FakeBudgetLocalNotificationService
+    implements BudgetLocalNotificationService {
+  final sent = <_SentNotification>[];
+
+  @override
+  Future<void> showBudgetThresholdAlert({
+    required String id,
+    required String title,
+    required String body,
+  }) async {
+    sent.add(_SentNotification(id: id, title: title, body: body));
+  }
+}
+
+class _SentNotification {
+  const _SentNotification({
+    required this.id,
+    required this.title,
+    required this.body,
+  });
+
+  final String id;
+  final String title;
+  final String body;
 }

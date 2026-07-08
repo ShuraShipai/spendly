@@ -13,6 +13,7 @@ import '../features/home/providers/dashboard_period_provider.dart';
 import '../features/reports/providers/reports_provider.dart';
 import '../features/settings/providers/budget_alert_provider.dart';
 import '../features/settings/providers/settings_provider.dart';
+import '../features/settings/services/budget_local_notification_service.dart';
 import '../features/settings/services/settings_firestore_service.dart';
 import 'providers/app_state_provider.dart';
 
@@ -30,6 +31,7 @@ class AppProviders extends StatelessWidget {
         Provider(create: (_) => CustomCategoryService()),
         Provider(create: (_) => ExpenseService()),
         Provider(create: (_) => SettingsFirestoreService()),
+        Provider(create: (_) => BudgetLocalNotificationService()),
         ChangeNotifierProvider(
           create: (context) => AuthProvider(
             authService: context.read<AuthService>(),
@@ -86,9 +88,18 @@ class AppProviders extends StatelessWidget {
           SettingsProvider,
           BudgetAlertProvider
         >(
-          create: (_) => BudgetAlertProvider(),
+          create: (context) => BudgetAlertProvider(
+            localNotificationService: context
+                .read<BudgetLocalNotificationService>(),
+          ),
           update:
-              (_, appStateProvider, expenseProvider, settingsProvider, alerts) {
+              (
+                context,
+                appStateProvider,
+                expenseProvider,
+                settingsProvider,
+                alerts,
+              ) {
                 final provider = alerts ?? BudgetAlertProvider();
                 provider.updateAlerts(
                   alertsEnabled: appStateProvider.budgetAlertsEnabled,
