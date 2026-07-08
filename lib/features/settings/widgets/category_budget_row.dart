@@ -20,21 +20,17 @@ class CategoryBudgetRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final progress = budget <= 0 ? 0.0 : (spent / budget).clamp(0.0, 1.0);
+    final rawProgress = budget <= 0 ? 0.0 : spent / budget;
+    final progress = rawProgress.clamp(0.0, 1.0).toDouble();
     final exceeded = budget > 0 && spent > budget;
-    final limitReached = budget > 0 && progress >= 0.9;
-    final warning = budget > 0 && progress >= 0.8 && progress < 0.9;
+    final warning = budget > 0 && rawProgress >= 0.8 && !exceeded;
     final progressColor = exceeded
-        ? AppColors.danger
-        : limitReached
         ? AppColors.danger
         : warning
         ? AppColors.warning
         : category.color;
     final trackColor = _tint(category.color);
     final amountColor = exceeded
-        ? AppColors.danger
-        : limitReached
         ? AppColors.danger
         : warning
         ? AppColors.warning
@@ -117,14 +113,10 @@ class CategoryBudgetRow extends StatelessWidget {
                   ),
                 ),
               ),
-              if (warning || limitReached || exceeded) ...[
+              if (warning || exceeded) ...[
                 const SizedBox(height: 5),
                 Text(
-                  exceeded
-                      ? 'Budget exceeded'
-                      : limitReached
-                      ? 'Limit reached'
-                      : 'Approaching limit',
+                  exceeded ? 'Budget exceeded' : 'Approaching limit',
                   style: Theme.of(context).textTheme.labelMedium?.copyWith(
                     color: progressColor,
                     fontSize: 10.5,

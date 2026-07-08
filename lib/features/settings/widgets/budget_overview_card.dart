@@ -18,15 +18,17 @@ class BudgetOverviewCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final hasLimit = budget > 0;
-    final percent = hasLimit ? (spent / budget * 100).round() : 0;
+    final rawProgress = hasLimit ? spent / budget : 0.0;
+    final percent = hasLimit
+        ? _formatPercent(rawProgress, allowHundredPercent: spent >= budget)
+        : null;
     final remaining = hasLimit
         ? (budget - spent).clamp(0, double.infinity).toDouble()
         : 0.0;
-    final progress = hasLimit ? (spent / budget).clamp(0.0, 1.0) : 0.0;
+    final progress = rawProgress.clamp(0.0, 1.0).toDouble();
     final exceeded = hasLimit && spent > budget;
-    final limitReached = hasLimit && progress >= 0.9;
-    final warning = hasLimit && progress >= 0.8 && progress < 0.9;
-    final progressColor = exceeded || limitReached
+    final warning = hasLimit && rawProgress >= 0.8 && !exceeded;
+    final progressColor = exceeded
         ? AppColors.danger
         : warning
         ? AppColors.warning
@@ -58,7 +60,7 @@ class BudgetOverviewCard extends StatelessWidget {
                   ),
                 ),
                 Text(
-                  hasLimit ? '$percent%' : 'No limit',
+                  hasLimit ? percent! : 'No limit',
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
                     color: hasLimit ? progressColor : AppColors.mintDark,
                     fontSize: 14,
@@ -122,14 +124,12 @@ class BudgetOverviewCard extends StatelessWidget {
               hasLimit
                   ? exceeded
                         ? 'Budget exceeded'
-                        : limitReached
-                        ? 'Limit reached'
                         : warning
                         ? 'Approaching limit'
                         : '${_formatAmount(remaining)} left · on track'
                   : 'No limit',
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: warning || limitReached || exceeded
+                color: warning || exceeded
                     ? progressColor
                     : AppColors.inkSubtle,
                 fontWeight: FontWeight.w700,
@@ -146,5 +146,14 @@ class BudgetOverviewCard extends StatelessWidget {
       return '₹${amount.round()}';
     }
     return '₹${amount.toStringAsFixed(2)}';
+  }
+
+  String _formatPercent(double value, {required bool allowHundredPercent}) {
+    final percent = (value * 100).round();
+    if (allowHundredPercent) {
+      return '$percent%';
+    }
+
+    return '${percent.clamp(0, 99)}%';
   }
 }
