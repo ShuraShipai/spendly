@@ -1,6 +1,6 @@
 # Spendly
 
-Spendly is a Flutter expense tracker for personal budgeting and expense review. It uses Firebase Authentication and Firestore for user accounts, expenses, settings, budgets, and category data.
+Spendly is a Flutter expense tracker built around day-to-day budgeting: log expenses quickly, understand where the month is going, and keep budgets visible without a spreadsheet. It uses Firebase Authentication and Firestore for user accounts, expenses, settings, budgets, and category data.
 
 ## What it does
 
@@ -10,7 +10,8 @@ Spendly is a Flutter expense tracker for personal budgeting and expense review. 
 - Category management and custom categories
 - Overall budget and per-category budgets
 - Budget alerts for warning and exceeded states
-- Reports with category breakdown and export flow
+- Insights with current-month category breakdown and monthly CSV export
+- Settings export for the full expense history CSV
 - Light and dark themes with shared Spendly design tokens
 
 ## Tech Stack
@@ -84,3 +85,4 @@ Spendly follows a feature-first Flutter architecture:
 
 - The app is not published to pub.dev
 - Firebase credentials and generated platform files are required for local development
+- Insights exports only the current calendar month; Settings exports the complete expense list

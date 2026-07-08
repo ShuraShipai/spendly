@@ -10,6 +10,7 @@ class ExpenseListQueryState {
   var isSearching = false;
   var query = '';
   var sortOption = ExpenseSortOption.newest;
+  ExpenseSortOption? _sortOptionBeforeSearch;
   final selectedCategoryIds = <String>{};
   final selectedPaymentMethods = <PaymentMethod>{};
   RangeValues? amountRange;
@@ -21,13 +22,18 @@ class ExpenseListQueryState {
   void toggleSearch() {
     isSearching = !isSearching;
     if (isSearching) {
+      _sortOptionBeforeSearch ??= sortOption;
       sortOption = ExpenseSortOption.highestAmount;
+      return;
     }
+
+    _restoreSortOption();
   }
 
   void reset() {
     query = '';
     isSearching = false;
+    _restoreSortOption();
     selectedCategoryIds.clear();
     selectedPaymentMethods.clear();
     showAmountFilter = false;
@@ -152,5 +158,13 @@ class ExpenseListQueryState {
       return '₹${amount.round()}';
     }
     return '₹${amount.toStringAsFixed(2)}';
+  }
+
+  void _restoreSortOption() {
+    final previousSort = _sortOptionBeforeSearch;
+    if (previousSort != null) {
+      sortOption = previousSort;
+      _sortOptionBeforeSearch = null;
+    }
   }
 }
