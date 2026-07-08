@@ -2,7 +2,7 @@
 
 Spendly is a Flutter expense tracker for everyday budgeting. It helps users log expenses, review spending by day/week/month, manage budgets, create custom categories, receive budget alerts, and export CSV data.
 
-The app uses Firebase Authentication for accounts, Cloud Firestore for user data, Provider for state management and dependency injection, and a feature-first Flutter architecture.
+The app uses Firebase Authentication for accounts, Cloud Firestore for user data, Provider for state management and dependency injection, and a feature-first Flutter architecture that keeps each product area self-contained.
 
 ## Features
 
@@ -89,6 +89,7 @@ Dependency direction:
 ## Firebase And Data Layer
 
 Firebase startup happens in `lib/main.dart` using `DefaultFirebaseOptions.currentPlatform`.
+`lib/firebase_options.dart` is generated from Firebase project settings and checked in so the app can boot on every supported platform without extra local setup.
 
 Firestore access is centralized under `lib/core/firebase`:
 
@@ -431,6 +432,7 @@ flutter test
 
 - Firebase is initialized before app startup in `lib/main.dart`.
 - Firebase options are read from `lib/firebase_options.dart`.
+- Regenerate `lib/firebase_options.dart` through FlutterFire when Firebase project config changes; do not hand-edit it.
 - Firestore collection/document names should be added to `FirestoreConstants`, not duplicated in feature files.
 - New production Firestore-backed services should receive `FirestoreService` through `AppProviders`.
 - Android declares `POST_NOTIFICATIONS` for Android 13+ budget notifications.
@@ -440,6 +442,7 @@ flutter test
 - Keep feature-specific UI inside `lib/features/<feature>/widgets`.
 - Keep reusable feature-neutral UI inside `lib/core/widgets`.
 - Put Firebase and persistence calls in services.
+- Route all Firestore collection names through `FirestoreConstants` and all Firestore access through `FirestoreService`.
 - Put UI-facing state and async coordination in providers.
 - Keep screens focused on layout, input, navigation, and provider calls.
 - Add route constants to `AppRoutes` before navigating to new screens.
