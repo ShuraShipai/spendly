@@ -9,8 +9,7 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_radii.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../auth/providers/auth_provider.dart';
-import '../../expenses/models/expense_category.dart';
-import '../../expenses/providers/expense_provider.dart';
+import '../providers/budget_alert_provider.dart';
 import '../providers/settings_provider.dart';
 import '../widgets/budget_notification_tile.dart';
 
@@ -48,12 +47,9 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   @override
   Widget build(BuildContext context) {
     final appState = context.watch<AppStateProvider>();
+    final alertsProvider = context.watch<BudgetAlertProvider>();
     final settingsProvider = context.watch<SettingsProvider>();
-    final expenseProvider = context.watch<ExpenseProvider>();
-    final notifications = _budgetNotifications(
-      settingsProvider: settingsProvider,
-      expenseProvider: expenseProvider,
-    );
+    final notifications = alertsProvider.activeAlerts;
 
     return Scaffold(
       appBar: AppBar(title: const Text('Notifications')),
@@ -97,7 +93,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                     index++
                   ) ...[
                     BudgetNotificationTile(
-                      severity: notifications[index].severity,
+                      severity: _tileSeverityFor(notifications[index].severity),
                       title: notifications[index].title,
                       message: notifications[index].message,
                       timeLabel: notifications[index].timeLabel,
@@ -117,66 +113,11 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     );
   }
 
-  List<_BudgetNotification> _budgetNotifications({
-    required SettingsProvider settingsProvider,
-    required ExpenseProvider expenseProvider,
-  }) {
-    final notifications = <_BudgetNotification>[];
-    final month = DateTime.now();
-    final monthExpenses = expenseProvider.expensesForMonth(month);
-    final totalSpent = monthExpenses.fold<double>(
-      0,
-      (total, expense) => total + expense.amount,
-    );
-
-    if (settingsProvider.monthlyBudget > 0) {
-      final progress = totalSpent / settingsProvider.monthlyBudget;
-      if (progress >= 0.8) {
-        notifications.add(
-          progress > 1
-              ? _BudgetNotification.overallExceeded(
-                  spent: totalSpent,
-                  budget: settingsProvider.monthlyBudget,
-                )
-              : _BudgetNotification.overallWarning(
-                  spent: totalSpent,
-                  budget: settingsProvider.monthlyBudget,
-                  percent: (progress * 100).round(),
-                ),
-        );
-      }
-    }
-
-    for (final category in settingsProvider.categories) {
-      final budget = settingsProvider.budgetForCategory(category.id);
-      if (budget <= 0) {
-        continue;
-      }
-
-      final spent = monthExpenses
-          .where((expense) => expense.category.id == category.id)
-          .fold<double>(0, (total, expense) => total + expense.amount);
-      final progress = spent / budget;
-
-      if (progress >= 0.8) {
-        notifications.add(
-          progress > 1
-              ? _BudgetNotification.categoryExceeded(
-                  category: category,
-                  overAmount: spent - budget,
-                )
-              : _BudgetNotification.categoryWarning(
-                  category: category,
-                  spent: spent,
-                  budget: budget,
-                  percent: (progress * 100).round(),
-                ),
-        );
-      }
-    }
-
-    notifications.sort((a, b) => a.sortPriority.compareTo(b.sortPriority));
-    return notifications;
+  BudgetNotificationSeverity _tileSeverityFor(BudgetAlertSeverity severity) {
+    return switch (severity) {
+      BudgetAlertSeverity.exceeded => BudgetNotificationSeverity.exceeded,
+      BudgetAlertSeverity.warning => BudgetNotificationSeverity.warning,
+    };
   }
 }
 
@@ -235,88 +176,5 @@ class _NotificationsEmptyState extends StatelessWidget {
         ),
       ),
     );
-  }
-}
-
-class _BudgetNotification {
-  const _BudgetNotification({
-    required this.severity,
-    required this.title,
-    required this.message,
-    required this.timeLabel,
-    required this.sortPriority,
-    this.isUnread = false,
-  });
-
-  factory _BudgetNotification.overallExceeded({
-    required double spent,
-    required double budget,
-  }) {
-    return _BudgetNotification(
-      severity: BudgetNotificationSeverity.exceeded,
-      title: 'Monthly budget exceeded',
-      message:
-          'You are ${_formatAmount(spent - budget)} over your monthly budget.',
-      timeLabel: 'This month',
-      sortPriority: 0,
-      isUnread: true,
-    );
-  }
-
-  factory _BudgetNotification.overallWarning({
-    required double spent,
-    required double budget,
-    required int percent,
-  }) {
-    return _BudgetNotification(
-      severity: BudgetNotificationSeverity.warning,
-      title: '$percent% of monthly budget used',
-      message: '${_formatAmount(spent)} of ${_formatAmount(budget)} spent.',
-      timeLabel: 'This month',
-      sortPriority: 1,
-    );
-  }
-
-  factory _BudgetNotification.categoryExceeded({
-    required ExpenseCategory category,
-    required double overAmount,
-  }) {
-    return _BudgetNotification(
-      severity: BudgetNotificationSeverity.exceeded,
-      title: 'Budget exceeded',
-      message: '${category.label} is ${_formatAmount(overAmount)} over budget.',
-      timeLabel: 'This month',
-      sortPriority: 2,
-      isUnread: true,
-    );
-  }
-
-  factory _BudgetNotification.categoryWarning({
-    required ExpenseCategory category,
-    required double spent,
-    required double budget,
-    required int percent,
-  }) {
-    return _BudgetNotification(
-      severity: BudgetNotificationSeverity.warning,
-      title: '$percent% of ${category.label} budget used',
-      message: '${_formatAmount(spent)} of ${_formatAmount(budget)} spent.',
-      timeLabel: 'This month',
-      sortPriority: 3,
-    );
-  }
-
-  final BudgetNotificationSeverity severity;
-  final String title;
-  final String message;
-  final String timeLabel;
-  final int sortPriority;
-  final bool isUnread;
-
-  static String _formatAmount(double amount) {
-    if (amount == amount.roundToDouble()) {
-      return '₹${amount.round()}';
-    }
-    return '₹${amount.toStringAsFixed(2)}';
   }
 }

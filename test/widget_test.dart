@@ -342,6 +342,44 @@ void main() {
     expect(find.text('Done'), findsOneWidget);
   });
 
+  testWidgets('shows saved expense page without overflow on small screens', (
+    WidgetTester tester,
+  ) async {
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(390, 620);
+    addTearDown(tester.view.reset);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.light,
+        home: const Scaffold(body: AddExpenseFlowSheet()),
+      ),
+    );
+
+    await tester.tap(find.text('₹0'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('+₹100'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Next'));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('PAY VIA'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('UPI'));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Save expense'));
+    await tester.pumpAndSettle();
+
+    expect(tester.takeException(), isNull);
+    expect(find.text('Nice one!'), findsOneWidget);
+    expect(
+      find.text('Your expense is saved.\nYour dashboard is live.'),
+      findsOneWidget,
+    );
+    expect(find.text('Done'), findsOneWidget);
+  });
+
   testWidgets('keeps custom categories in memory for the current sheet', (
     WidgetTester tester,
   ) async {

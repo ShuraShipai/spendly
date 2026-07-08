@@ -219,6 +219,87 @@ void main() {
       expect(notifications.sent, hasLength(1));
     });
 
+    test('exposes active threshold alerts for notification screens', () {
+      final alerts = BudgetAlertProvider();
+      final expenses = ExpenseProvider();
+      final settings = SettingsProvider(
+        categoryService: CustomCategoryService.memory(),
+      );
+      final month = DateTime(2026, 7);
+
+      settings
+        ..setMonthlyBudget(100)
+        ..setCategoryBudget(ExpenseCategory.food.id, 50);
+      expenses.addExpense(
+        ExpenseEntry(
+          id: 'food',
+          amount: 80,
+          category: ExpenseCategory.food,
+          date: month,
+          paymentMethod: PaymentMethod.cash,
+        ),
+      );
+
+      alerts.updateAlerts(
+        alertsEnabled: true,
+        expenseProvider: expenses,
+        settingsProvider: settings,
+        referenceDate: month,
+      );
+
+      expect(alerts.activeAlerts, hasLength(2));
+      expect(alerts.activeAlerts.first.type, BudgetExceededAlertType.overall);
+      expect(alerts.activeAlerts.first.title, 'Heads up — 80% used');
+      expect(alerts.activeAlerts.last.type, BudgetExceededAlertType.category);
+      expect(alerts.activeAlerts.last.title, 'Heads up — 160% used');
+    });
+
+    test(
+      'updates active alert content when the alert state id stays the same',
+      () {
+        final alerts = BudgetAlertProvider();
+        final expenses = ExpenseProvider();
+        final settings = SettingsProvider(
+          categoryService: CustomCategoryService.memory(),
+        );
+        final month = DateTime(2026, 7);
+
+        settings.setMonthlyBudget(100);
+        expenses.addExpense(
+          ExpenseEntry(
+            id: 'rent',
+            amount: 90,
+            category: ExpenseCategory.rent,
+            date: month,
+            paymentMethod: PaymentMethod.card,
+          ),
+        );
+
+        alerts.updateAlerts(
+          alertsEnabled: true,
+          expenseProvider: expenses,
+          settingsProvider: settings,
+          referenceDate: month,
+        );
+
+        expect(alerts.activeAlerts.single.title, 'Heads up — 90% used');
+
+        settings.setMonthlyBudget(110);
+        alerts.updateAlerts(
+          alertsEnabled: true,
+          expenseProvider: expenses,
+          settingsProvider: settings,
+          referenceDate: month,
+        );
+
+        expect(alerts.activeAlerts.single.title, 'Heads up — 82% used');
+        expect(
+          alerts.activeAlerts.single.message,
+          'You\'ve spent ₹90 of your ₹110 Overall budget this month.',
+        );
+      },
+    );
+
     test('clears pending alerts when budget alerts are disabled', () {
       final alerts = BudgetAlertProvider();
       final appState = AppStateProvider();
@@ -248,6 +329,7 @@ void main() {
       );
 
       expect(alerts.pendingAlert, isNull);
+      expect(alerts.activeAlerts, isEmpty);
     });
   });
 }
