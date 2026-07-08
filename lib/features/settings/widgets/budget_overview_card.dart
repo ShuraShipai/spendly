@@ -23,6 +23,14 @@ class BudgetOverviewCard extends StatelessWidget {
         ? (budget - spent).clamp(0, double.infinity).toDouble()
         : 0.0;
     final progress = hasLimit ? (spent / budget).clamp(0.0, 1.0) : 0.0;
+    final exceeded = hasLimit && spent > budget;
+    final limitReached = hasLimit && progress >= 0.9;
+    final warning = hasLimit && progress >= 0.8 && progress < 0.9;
+    final progressColor = exceeded || limitReached
+        ? AppColors.danger
+        : warning
+        ? AppColors.warning
+        : AppColors.mintDark;
 
     return DecoratedBox(
       decoration: BoxDecoration(
@@ -52,9 +60,7 @@ class BudgetOverviewCard extends StatelessWidget {
                 Text(
                   hasLimit ? '$percent%' : 'No limit',
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    color: hasLimit && percent >= 90
-                        ? AppColors.danger
-                        : AppColors.mintDark,
+                    color: hasLimit ? progressColor : AppColors.mintDark,
                     fontSize: 14,
                     fontWeight: FontWeight.w900,
                   ),
@@ -84,6 +90,7 @@ class BudgetOverviewCard extends StatelessWidget {
             ClipRRect(
               borderRadius: BorderRadius.circular(7),
               child: SizedBox(
+                width: double.infinity,
                 height: 11,
                 child: Stack(
                   children: [
@@ -97,12 +104,12 @@ class BudgetOverviewCard extends StatelessWidget {
                     ),
                     FractionallySizedBox(
                       widthFactor: progress,
-                      child: DecoratedBox(
-                        decoration: BoxDecoration(
-                          gradient: const LinearGradient(
-                            colors: [AppColors.mint, AppColors.mintDark],
+                      child: SizedBox.expand(
+                        child: DecoratedBox(
+                          decoration: BoxDecoration(
+                            color: progressColor,
+                            borderRadius: BorderRadius.circular(7),
                           ),
-                          borderRadius: BorderRadius.circular(7),
                         ),
                       ),
                     ),
@@ -113,10 +120,18 @@ class BudgetOverviewCard extends StatelessWidget {
             const SizedBox(height: 6),
             Text(
               hasLimit
-                  ? '${_formatAmount(remaining)} left · ${progress >= 0.9 ? 'review soon' : 'on track'}'
+                  ? exceeded
+                        ? 'Budget exceeded'
+                        : limitReached
+                        ? 'Limit reached'
+                        : warning
+                        ? 'Approaching limit'
+                        : '${_formatAmount(remaining)} left · on track'
                   : 'No limit',
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: AppColors.inkSubtle,
+                color: warning || limitReached || exceeded
+                    ? progressColor
+                    : AppColors.inkSubtle,
                 fontWeight: FontWeight.w700,
               ),
             ),
