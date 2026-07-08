@@ -4,8 +4,8 @@ import 'package:provider/provider.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../features/settings/providers/budget_alert_provider.dart';
-import '../../features/settings/widgets/budget_alert_card.dart'
-    as alert_card;
+
+import '../../features/settings/widgets/budget_alert_card.dart' as alert_card;
 import '../app_routes.dart';
 
 class BudgetExceededPopupPresenter extends StatefulWidget {

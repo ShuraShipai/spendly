@@ -55,7 +55,10 @@ class BudgetAlertCard extends StatelessWidget {
         border: Border.all(color: borderColor),
       ),
       child: Padding(
-        padding: const EdgeInsets.all(AppSpacing.md),
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.md,
+          vertical: AppSpacing.xl,
+        ),
         child: Column(
           children: [
             DecoratedBox(
@@ -74,7 +77,7 @@ class BudgetAlertCard extends StatelessWidget {
                 ),
               ),
             ),
-            const SizedBox(height: AppSpacing.sm),
+            const SizedBox(height: AppSpacing.md),
             Text(
               title,
               textAlign: TextAlign.center,
