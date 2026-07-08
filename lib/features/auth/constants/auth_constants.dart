@@ -1,8 +1,6 @@
 class AuthConstants {
   const AuthConstants._();
 
-  static const usersCollection = 'users';
-
   static const minPasswordLength = 8;
   static const maxDisplayNameLength = 60;
 

@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/widgets.dart';
 import 'package:provider/provider.dart';
 
+import '../core/firebase/firestore_service.dart';
 import '../features/auth/providers/auth_provider.dart';
 import '../features/auth/services/auth_service.dart';
 import '../features/auth/services/user_firestore_service.dart';
@@ -26,11 +27,28 @@ class AppProviders extends StatelessWidget {
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
+        Provider(create: (_) => FirestoreService()),
         Provider(create: (_) => AuthService()),
-        Provider(create: (_) => UserFirestoreService()),
-        Provider(create: (_) => CustomCategoryService()),
-        Provider(create: (_) => ExpenseService()),
-        Provider(create: (_) => SettingsFirestoreService()),
+        Provider(
+          create: (context) => UserFirestoreService(
+            firestoreService: context.read<FirestoreService>(),
+          ),
+        ),
+        Provider(
+          create: (context) => CustomCategoryService(
+            firestoreService: context.read<FirestoreService>(),
+          ),
+        ),
+        Provider(
+          create: (context) => ExpenseService(
+            firestoreService: context.read<FirestoreService>(),
+          ),
+        ),
+        Provider(
+          create: (context) => SettingsFirestoreService(
+            firestoreService: context.read<FirestoreService>(),
+          ),
+        ),
         Provider(create: (_) => BudgetLocalNotificationService()),
         ChangeNotifierProvider(
           create: (context) => AuthProvider(

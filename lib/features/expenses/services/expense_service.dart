@@ -2,27 +2,27 @@ import 'dart:async';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-import '../../auth/constants/auth_constants.dart';
-import '../constants/expense_constants.dart';
+import '../../../core/firebase/firestore_constants.dart';
+import '../../../core/firebase/firestore_service.dart';
 import '../models/expense_entry.dart';
 
 class ExpenseService {
-  ExpenseService({FirebaseFirestore? firestore})
-    : firestore = firestore ?? FirebaseFirestore.instance;
+  ExpenseService({FirestoreService? firestoreService})
+    : _firestoreService = firestoreService ?? FirestoreService();
 
-  ExpenseService.memory() : firestore = null;
+  ExpenseService.memory() : _firestoreService = null;
 
-  final FirebaseFirestore? firestore;
+  final FirestoreService? _firestoreService;
   final Map<String, List<ExpenseEntry>> _memoryStore = {};
   final Map<String, StreamController<List<ExpenseEntry>>> _memoryStreams = {};
 
-  bool get _usesMemory => firestore == null;
+  bool get _usesMemory => _firestoreService == null;
 
   CollectionReference<Map<String, dynamic>> _expenses(String uid) {
-    return firestore!
-        .collection(AuthConstants.usersCollection)
-        .doc(uid)
-        .collection(ExpenseConstants.expensesCollection);
+    return _firestoreService!.userCollection(
+      uid,
+      FirestoreConstants.expensesCollection,
+    );
   }
 
   Stream<List<ExpenseEntry>> watchActiveExpenses(String uid) {
@@ -115,7 +115,7 @@ class ExpenseService {
     }
 
     final snapshot = await _expenses(uid).get();
-    final batch = firestore!.batch();
+    final batch = _firestoreService!.batch();
     for (final doc in snapshot.docs) {
       batch.delete(doc.reference);
     }

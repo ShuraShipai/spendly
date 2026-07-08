@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-import '../../auth/constants/auth_constants.dart';
+import '../../../core/firebase/firestore_constants.dart';
+import '../../../core/firebase/firestore_service.dart';
 
 class UserPreferencesData {
   const UserPreferencesData({
@@ -71,26 +72,22 @@ class UserBudgetData {
 }
 
 class SettingsFirestoreService {
-  SettingsFirestoreService({FirebaseFirestore? firestore})
-    : firestore = firestore ?? FirebaseFirestore.instance;
+  SettingsFirestoreService({FirestoreService? firestoreService})
+    : _firestoreService = firestoreService ?? FirestoreService();
 
-  SettingsFirestoreService.memory() : firestore = null;
+  SettingsFirestoreService.memory() : _firestoreService = null;
 
-  final FirebaseFirestore? firestore;
+  final FirestoreService? _firestoreService;
   final Map<String, UserPreferencesData> _memoryPreferences = {};
   final Map<String, UserBudgetData> _memoryBudgets = {};
 
-  bool get _usesMemory => firestore == null;
+  bool get _usesMemory => _firestoreService == null;
 
   DocumentReference<Map<String, dynamic>> _settingDoc(
     String uid,
     String docId,
   ) {
-    return firestore!
-        .collection(AuthConstants.usersCollection)
-        .doc(uid)
-        .collection('settings')
-        .doc(docId);
+    return _firestoreService!.userSettingsDocument(uid, docId);
   }
 
   Future<UserPreferencesData?> loadPreferences(String uid) async {
@@ -98,7 +95,10 @@ class SettingsFirestoreService {
       return _memoryPreferences[uid];
     }
 
-    final doc = await _settingDoc(uid, 'preferences').get();
+    final doc = await _settingDoc(
+      uid,
+      FirestoreConstants.preferencesDocument,
+    ).get();
     if (!doc.exists) {
       return null;
     }
@@ -116,7 +116,7 @@ class SettingsFirestoreService {
 
     await _settingDoc(
       uid,
-      'preferences',
+      FirestoreConstants.preferencesDocument,
     ).set(preferences.toMap(), SetOptions(merge: true));
   }
 
@@ -125,7 +125,7 @@ class SettingsFirestoreService {
       return _memoryBudgets[uid];
     }
 
-    final doc = await _settingDoc(uid, 'budget').get();
+    final doc = await _settingDoc(uid, FirestoreConstants.budgetDocument).get();
     if (!doc.exists) {
       return null;
     }
@@ -140,7 +140,7 @@ class SettingsFirestoreService {
 
     await _settingDoc(
       uid,
-      'budget',
+      FirestoreConstants.budgetDocument,
     ).set(budget.toMap(), SetOptions(merge: true));
   }
 
@@ -151,12 +151,10 @@ class SettingsFirestoreService {
       return;
     }
 
-    final settings = await firestore!
-        .collection(AuthConstants.usersCollection)
-        .doc(uid)
-        .collection('settings')
+    final settings = await _firestoreService!
+        .userCollection(uid, FirestoreConstants.settingsCollection)
         .get();
-    final batch = firestore!.batch();
+    final batch = _firestoreService.batch();
     for (final doc in settings.docs) {
       batch.delete(doc.reference);
     }

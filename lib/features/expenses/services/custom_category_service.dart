@@ -1,25 +1,25 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-import '../../auth/constants/auth_constants.dart';
-import '../constants/expense_constants.dart';
+import '../../../core/firebase/firestore_constants.dart';
+import '../../../core/firebase/firestore_service.dart';
 import '../models/expense_category.dart';
 
 class CustomCategoryService {
-  CustomCategoryService({FirebaseFirestore? firestore})
-    : firestore = firestore ?? FirebaseFirestore.instance;
+  CustomCategoryService({FirestoreService? firestoreService})
+    : _firestoreService = firestoreService ?? FirestoreService();
 
-  CustomCategoryService.memory() : firestore = null;
+  CustomCategoryService.memory() : _firestoreService = null;
 
-  final FirebaseFirestore? firestore;
+  final FirestoreService? _firestoreService;
   final Map<String, List<ExpenseCategory>> _memoryStore = {};
 
-  bool get _usesMemory => firestore == null;
+  bool get _usesMemory => _firestoreService == null;
 
   CollectionReference<Map<String, dynamic>> _customCategories(String uid) {
-    return firestore!
-        .collection(AuthConstants.usersCollection)
-        .doc(uid)
-        .collection(ExpenseConstants.customCategoriesCollection);
+    return _firestoreService!.userCollection(
+      uid,
+      FirestoreConstants.customCategoriesCollection,
+    );
   }
 
   Future<List<ExpenseCategory>> loadCustomCategories(String uid) async {
@@ -82,7 +82,7 @@ class CustomCategoryService {
     }
 
     final snapshot = await _customCategories(uid).get();
-    final batch = firestore!.batch();
+    final batch = _firestoreService!.batch();
     for (final doc in snapshot.docs) {
       batch.delete(doc.reference);
     }

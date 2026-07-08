@@ -1,16 +1,16 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-import '../constants/auth_constants.dart';
+import '../../../core/firebase/firestore_service.dart';
 import '../models/app_user.dart';
 
 class UserFirestoreService {
-  UserFirestoreService({FirebaseFirestore? firestore})
-    : _firestore = firestore ?? FirebaseFirestore.instance;
+  UserFirestoreService({FirestoreService? firestoreService})
+    : _firestoreService = firestoreService ?? FirestoreService();
 
-  final FirebaseFirestore _firestore;
+  final FirestoreService _firestoreService;
 
   CollectionReference<Map<String, dynamic>> get _users {
-    return _firestore.collection(AuthConstants.usersCollection);
+    return _firestoreService.users;
   }
 
   Future<AppUser?> getUser(String uid) async {

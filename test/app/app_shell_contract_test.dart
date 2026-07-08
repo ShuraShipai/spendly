@@ -11,6 +11,10 @@ void main() {
 
       expect(
         appProviders,
+        contains('Provider(create: (_) => FirestoreService())'),
+      );
+      expect(
+        appProviders,
         isNot(
           contains(
             'AppStateProvider(settingsService: SettingsFirestoreService())',
@@ -36,6 +40,21 @@ void main() {
         ).hasMatch(appProviders),
         isTrue,
       );
+    });
+
+    test('Firestore instance is centralized behind FirestoreService', () {
+      final dartFiles = Directory('lib')
+          .listSync(recursive: true)
+          .whereType<File>()
+          .where((file) => file.path.endsWith('.dart'));
+
+      final directInstanceFiles = [
+        for (final file in dartFiles)
+          if (file.readAsStringSync().contains('FirebaseFirestore.instance'))
+            file.path,
+      ];
+
+      expect(directInstanceFiles, ['lib/core/firebase/firestore_service.dart']);
     });
 
     test('settings auth destructive actions reset navigation to AuthGate', () {
