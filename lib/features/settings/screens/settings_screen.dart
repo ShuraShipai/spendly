@@ -130,7 +130,14 @@ class SettingsScreen extends StatelessWidget {
       if (!context.mounted) {
         return;
       }
-      await context.read<AuthProvider>().logout();
+      final authProvider = context.read<AuthProvider>();
+      await authProvider.logout();
+      if (!context.mounted || authProvider.errorMessage != null) {
+        return;
+      }
+      Navigator.of(
+        context,
+      ).pushNamedAndRemoveUntil(AppRoutes.authGate, (_) => false);
     }
   }
 
@@ -148,7 +155,14 @@ class SettingsScreen extends StatelessWidget {
       if (!context.mounted) {
         return;
       }
-      await context.read<AuthProvider>().deleteAccount();
+      final authProvider = context.read<AuthProvider>();
+      await authProvider.deleteAccount();
+      if (!context.mounted || authProvider.errorMessage != null) {
+        return;
+      }
+      Navigator.of(
+        context,
+      ).pushNamedAndRemoveUntil(AppRoutes.authGate, (_) => false);
     }
   }
 }

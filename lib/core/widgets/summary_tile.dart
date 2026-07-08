@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 
-import '../theme/app_colors.dart';
+import '../theme/app_radii.dart';
 import '../theme/app_spacing.dart';
 
-class ExpenseSummaryTile extends StatelessWidget {
-  const ExpenseSummaryTile({
+class SummaryTile extends StatelessWidget {
+  const SummaryTile({
     required this.title,
     required this.subtitle,
     required this.amountLabel,
@@ -23,18 +23,16 @@ class ExpenseSummaryTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final colorScheme = Theme.of(context).colorScheme;
 
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(14),
+      borderRadius: BorderRadius.circular(AppRadii.md),
       child: DecoratedBox(
         decoration: BoxDecoration(
-          color: isDark ? AppColors.darkSurface : AppColors.card,
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(
-            color: isDark ? AppColors.darkInkMuted : AppColors.line,
-          ),
+          color: colorScheme.surface,
+          borderRadius: BorderRadius.circular(AppRadii.md),
+          border: Border.all(color: colorScheme.outlineVariant),
         ),
         child: Padding(
           padding: const EdgeInsets.symmetric(
@@ -46,11 +44,11 @@ class ExpenseSummaryTile extends StatelessWidget {
               DecoratedBox(
                 decoration: BoxDecoration(
                   color: iconColor,
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(AppRadii.sm + 2),
                 ),
                 child: SizedBox.square(
                   dimension: 36,
-                  child: Icon(icon, color: Colors.white, size: 18),
+                  child: Icon(icon, color: colorScheme.onPrimary, size: 18),
                 ),
               ),
               const SizedBox(width: AppSpacing.sm),

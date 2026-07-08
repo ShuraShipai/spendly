@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../theme/app_colors.dart';
+
 class UserProfileAvatar extends StatelessWidget {
   const UserProfileAvatar({
     required this.initial,
@@ -25,7 +27,7 @@ class UserProfileAvatar extends StatelessWidget {
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            colors: [Color(0xFFB0A4F5), Color(0xFF8C7DF0)],
+            colors: [AppColors.mint, AppColors.mintDark],
           ),
         ),
         child: SizedBox.square(

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:spendly/features/expenses/models/expense_category.dart';
@@ -5,6 +7,7 @@ import 'package:spendly/features/expenses/models/expense_entry.dart';
 import 'package:spendly/features/expenses/models/expense_sort_option.dart';
 import 'package:spendly/features/expenses/models/payment_method.dart';
 import 'package:spendly/features/expenses/providers/expense_provider.dart';
+import 'package:spendly/features/expenses/services/expense_service.dart';
 
 void main() {
   group('ExpenseProvider', () {
@@ -126,7 +129,7 @@ void main() {
       );
     });
 
-    test('updates and deletes existing expenses by id', () {
+    test('updates and deletes existing expenses by id', () async {
       final provider = ExpenseProvider();
       final expense = ExpenseEntry(
         id: 'gym',
@@ -137,7 +140,7 @@ void main() {
       );
 
       provider.addExpense(expense);
-      provider.updateExpense(
+      await provider.updateExpense(
         expense.copyWith(amount: 750, note: 'Monthly membership'),
       );
 
@@ -174,6 +177,52 @@ void main() {
       provider.restoreExpense(expense);
 
       expect(provider.expenses, [expense]);
+    });
+
+    test('rolls back optimistic updates when persistence fails', () async {
+      final service = _FailingUpdateExpenseService();
+      final provider = ExpenseProvider(expenseService: service);
+      final expense = ExpenseEntry(
+        id: 'gym',
+        amount: 500,
+        category: ExpenseCategory.health,
+        date: DateTime(2026, 7, 2),
+        paymentMethod: PaymentMethod.upi,
+      );
+
+      provider.bindUser('user-1');
+      service.emit([expense]);
+
+      final saved = await provider.updateExpense(expense.copyWith(amount: 750));
+
+      expect(saved, isFalse);
+      expect(provider.expenseById('gym')?.amount, 500);
+      expect(provider.errorMessage, 'Could not update expense.');
+    });
+
+    test('waits for a pending delete write before restoring undo', () async {
+      final service = _OrderedDeleteRestoreExpenseService();
+      final provider = ExpenseProvider(expenseService: service);
+      final expense = ExpenseEntry(
+        id: 'coffee',
+        amount: 120,
+        category: ExpenseCategory.food,
+        date: DateTime(2026, 7, 2),
+        paymentMethod: PaymentMethod.cash,
+      );
+
+      provider.bindUser('user-1');
+      service.emit([expense]);
+
+      final deletedExpense = provider.deleteExpense('coffee');
+      provider.restoreExpense(deletedExpense!);
+
+      expect(service.operations, ['delete:start']);
+
+      service.completeDelete();
+      await Future<void>.delayed(Duration.zero);
+
+      expect(service.operations, ['delete:start', 'restore:start']);
     });
 
     test('derives visible sorted expenses and day groups', () {
@@ -220,4 +269,60 @@ void main() {
       expect(groups.first.total, 120);
     });
   });
+}
+
+class _FailingUpdateExpenseService extends ExpenseService {
+  _FailingUpdateExpenseService() : super.memory();
+
+  final _controller = StreamController<List<ExpenseEntry>>.broadcast(
+    sync: true,
+  );
+
+  void emit(List<ExpenseEntry> expenses) {
+    _controller.add(expenses);
+  }
+
+  @override
+  Stream<List<ExpenseEntry>> watchActiveExpenses(String uid) {
+    return _controller.stream;
+  }
+
+  @override
+  Future<void> updateExpense(String uid, ExpenseEntry expense) {
+    throw StateError('update failed');
+  }
+}
+
+class _OrderedDeleteRestoreExpenseService extends ExpenseService {
+  _OrderedDeleteRestoreExpenseService() : super.memory();
+
+  final operations = <String>[];
+  final _controller = StreamController<List<ExpenseEntry>>.broadcast(
+    sync: true,
+  );
+  final _deleteCompleter = Completer<void>();
+
+  void emit(List<ExpenseEntry> expenses) {
+    _controller.add(expenses);
+  }
+
+  void completeDelete() {
+    _deleteCompleter.complete();
+  }
+
+  @override
+  Stream<List<ExpenseEntry>> watchActiveExpenses(String uid) {
+    return _controller.stream;
+  }
+
+  @override
+  Future<void> softDeleteExpense(String uid, String expenseId) {
+    operations.add('delete:start');
+    return _deleteCompleter.future;
+  }
+
+  @override
+  Future<void> restoreExpense(String uid, ExpenseEntry expense) async {
+    operations.add('restore:start');
+  }
 }

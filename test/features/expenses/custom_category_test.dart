@@ -25,6 +25,18 @@ void main() {
       expect(ExpenseCategory.food.isCustom, isFalse);
     });
 
+    test('does not collapse non-ASCII-only custom category ids', () {
+      final first = ExpenseCategory.custom(label: '咖啡', color: AppColors.rent);
+      final second = ExpenseCategory.custom(
+        label: '映画',
+        color: AppColors.health,
+      );
+
+      expect(first.id, isNot('custom-category'));
+      expect(second.id, isNot('custom-category'));
+      expect(first.id, isNot(second.id));
+    });
+
     test('compares category names case-insensitively after trimming', () {
       expect(ExpenseCategory.food.hasSameLabel(' food '), isTrue);
       expect(ExpenseCategory.food.hasSameLabel('FOOD'), isTrue);
@@ -152,6 +164,24 @@ void main() {
 
       await service.saveCustomCategory(userId, coffee);
       await service.deleteCustomCategory(userId, coffee.id);
+
+      expect(await service.loadCustomCategories(userId), isEmpty);
+    });
+
+    test('deletes all custom categories for a user', () async {
+      const userId = 'user-1';
+      final service = CustomCategoryService.memory();
+
+      await service.saveCustomCategory(
+        userId,
+        ExpenseCategory.custom(label: 'Coffee', color: AppColors.rent),
+      );
+      await service.saveCustomCategory(
+        userId,
+        ExpenseCategory.custom(label: 'Gym', color: AppColors.health),
+      );
+
+      await service.deleteAllCustomCategories(userId);
 
       expect(await service.loadCustomCategories(userId), isEmpty);
     });

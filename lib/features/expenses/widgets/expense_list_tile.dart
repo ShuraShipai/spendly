@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../../core/widgets/expense_summary_tile.dart';
+import '../../../core/widgets/summary_tile.dart';
 import '../models/expense_entry.dart';
 
 class ExpenseListTile extends StatelessWidget {
@@ -21,7 +21,7 @@ class ExpenseListTile extends StatelessWidget {
         ? '${expense.category.label} · ${expense.paymentMethod.label} · ${expense.dateLabel}'
         : '${expense.category.label} · ${expense.paymentMethod.label}';
 
-    return ExpenseSummaryTile(
+    return SummaryTile(
       onTap: onTap,
       title: expense.displayTitle,
       subtitle: subtitle,

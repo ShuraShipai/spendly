@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 
 import '../../../core/theme/app_colors.dart';
@@ -125,13 +127,21 @@ class ExpenseCategory {
   }
 
   static String customIdFor(String label) {
-    final slug = label
+    final normalizedLabel = label.trim().toLowerCase();
+    final slug = normalizedLabel
         .trim()
-        .toLowerCase()
         .replaceAll(RegExp(r'[^a-z0-9]+'), '-')
         .replaceAll(RegExp(r'^-+|-+$'), '');
 
-    return 'custom-${slug.isEmpty ? 'category' : slug}';
+    return 'custom-${slug.isEmpty ? _encodedLabelIdSegment(normalizedLabel) : slug}';
+  }
+
+  static String _encodedLabelIdSegment(String label) {
+    if (label.isEmpty) {
+      return 'category';
+    }
+
+    return base64Url.encode(utf8.encode(label)).replaceAll('=', '');
   }
 
   factory ExpenseCategory.custom({

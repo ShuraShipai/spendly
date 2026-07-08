@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
 
+import 'package:spendly/app/providers/app_state_provider.dart';
 import 'package:spendly/app/app_theme.dart';
 import 'package:spendly/features/auth/constants/auth_constants.dart';
 import 'package:spendly/features/auth/constants/auth_validators.dart';
@@ -16,6 +17,9 @@ import 'package:spendly/features/expenses/screens/expense_list_screen.dart';
 import 'package:spendly/features/expenses/widgets/add_expense_flow_sheet.dart';
 import 'package:spendly/features/home/widgets/email_verification_banner.dart';
 import 'package:spendly/features/home/widgets/recent_expenses_list.dart';
+import 'package:spendly/features/reports/providers/reports_provider.dart';
+import 'package:spendly/features/reports/screens/reports_screen.dart';
+import 'package:spendly/features/settings/widgets/settings_body.dart';
 
 void main() {
   test('validates auth form values', () {
@@ -229,6 +233,123 @@ void main() {
       await cardColorFor(ThemeMode.dark),
       AppTheme.dark.colorScheme.surface,
     );
+  });
+
+  testWidgets('reports export opens a monthly CSV preview', (
+    WidgetTester tester,
+  ) async {
+    final now = DateTime.now();
+    final previousMonth = DateTime(now.year, now.month - 1, 15);
+    final expenses = [
+      ExpenseEntry(
+        id: 'current-month',
+        amount: 120,
+        category: ExpenseCategory.food,
+        date: DateTime(now.year, now.month, 2),
+        paymentMethod: PaymentMethod.cash,
+        note: 'Current month',
+      ),
+      ExpenseEntry(
+        id: 'previous-month',
+        amount: 900,
+        category: ExpenseCategory.rent,
+        date: previousMonth,
+        paymentMethod: PaymentMethod.card,
+        note: 'Previous month',
+      ),
+    ];
+
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.light,
+        home: Provider(
+          create: (_) => ReportsProvider(expenses: expenses),
+          child: const Scaffold(body: ReportsScreen()),
+        ),
+      ),
+    );
+
+    await tester.tap(find.text('Export CSV'));
+    await tester.pumpAndSettle();
+
+    final previewText = tester
+        .widget<SelectableText>(find.byType(SelectableText))
+        .data!;
+    expect(previewText, contains('Current month'));
+    expect(previewText, isNot(contains('Previous month')));
+  });
+
+  testWidgets('settings export action uses the full CSV', (
+    WidgetTester tester,
+  ) async {
+    String? exportedCsv;
+    final expenses = [
+      ExpenseEntry(
+        id: 'july-food',
+        amount: 120,
+        category: ExpenseCategory.food,
+        date: DateTime(2026, 7, 2),
+        paymentMethod: PaymentMethod.cash,
+        note: 'July food',
+      ),
+      ExpenseEntry(
+        id: 'june-rent',
+        amount: 900,
+        category: ExpenseCategory.rent,
+        date: DateTime(2026, 6, 15),
+        paymentMethod: PaymentMethod.card,
+        note: 'June rent',
+      ),
+    ];
+
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.light,
+        home: Provider(
+          create: (_) => ReportsProvider(expenses: expenses),
+          child: Builder(
+            builder: (context) {
+              return Scaffold(
+                body: SettingsBody(
+                  user: null,
+                  appState: AppStateProvider(),
+                  isAuthLoading: false,
+                  platformBrightness: Brightness.light,
+                  onEditProfile: () {},
+                  onOpenCategories: () {},
+                  onOpenCategoryBudgets: () {},
+                  onOpenNotifications: () {},
+                  onCurrencySelected: (_) {},
+                  onWeekStartSelected: (_) {},
+                  onThemeModeChanged: (_) {},
+                  onBudgetAlertsChanged: (_) {},
+                  onExportData: () {
+                    exportedCsv = context.read<ReportsProvider>().allCsv();
+                  },
+                  onSignOut: () {},
+                  onDeleteAccount: () {},
+                  onShowOptionSheet:
+                      <T>({
+                        required title,
+                        required options,
+                        required selectedValue,
+                        required onSelected,
+                      }) {},
+                ),
+              );
+            },
+          ),
+        ),
+      ),
+    );
+
+    await tester.ensureVisible(find.text('Export data'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Export data'));
+    await tester.pump();
+
+    expect(exportedCsv, contains('July food'));
+    expect(exportedCsv, contains('June rent'));
   });
 
   testWidgets('adds quick amount chips to the current amount', (

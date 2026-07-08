@@ -1,7 +1,10 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:spendly/app/providers/app_state_provider.dart';
+import 'package:spendly/features/settings/services/settings_firestore_service.dart';
 
 void main() {
   group('AppStateProvider', () {
@@ -52,5 +55,79 @@ void main() {
 
       expect(provider.isDarkModeActive(Brightness.light), isTrue);
     });
+
+    test('resets user-specific preferences when unbound', () async {
+      final service = _FakeSettingsFirestoreService()
+        ..preferences['user-1'] = const UserPreferencesData(
+          themeMode: 'dark',
+          currencyCode: 'USD',
+          weekStartsOn: 'sunday',
+          budgetAlertsEnabled: false,
+        );
+      final provider = AppStateProvider(settingsService: service);
+
+      await provider.bindUser('user-1');
+
+      expect(provider.themeMode, ThemeMode.dark);
+      expect(provider.currency, CurrencyPreference.usd);
+      expect(provider.weekStart, WeekStartPreference.sunday);
+      expect(provider.budgetAlertsEnabled, isFalse);
+
+      await provider.bindUser(null);
+
+      expect(provider.themeMode, ThemeMode.system);
+      expect(provider.currency, CurrencyPreference.inr);
+      expect(provider.weekStart, WeekStartPreference.monday);
+      expect(provider.budgetAlertsEnabled, isTrue);
+    });
+
+    test('does not let new users inherit prior user preferences', () async {
+      final service = _FakeSettingsFirestoreService()
+        ..preferences['user-1'] = const UserPreferencesData(
+          themeMode: 'dark',
+          currencyCode: 'USD',
+          weekStartsOn: 'sunday',
+          budgetAlertsEnabled: false,
+        );
+      final provider = AppStateProvider(settingsService: service);
+
+      await provider.bindUser('user-1');
+      await provider.bindUser('user-2');
+
+      expect(provider.themeMode, ThemeMode.system);
+      expect(provider.currency, CurrencyPreference.inr);
+      expect(provider.weekStart, WeekStartPreference.monday);
+      expect(provider.budgetAlertsEnabled, isTrue);
+      expect(service.savedPreferences['user-2']?.themeMode, 'system');
+      expect(service.savedPreferences['user-2']?.currencyCode, 'INR');
+      expect(service.savedPreferences['user-2']?.weekStartsOn, 'monday');
+      expect(service.savedPreferences['user-2']?.budgetAlertsEnabled, isTrue);
+    });
   });
+}
+
+class _FakeSettingsFirestoreService extends SettingsFirestoreService {
+  _FakeSettingsFirestoreService() : super.memory();
+
+  final preferences = <String, UserPreferencesData?>{};
+  final savedPreferences = <String, UserPreferencesData>{};
+  final loadCompleters = <String, Completer<UserPreferencesData?>>{};
+
+  @override
+  Future<UserPreferencesData?> loadPreferences(String uid) {
+    final completer = loadCompleters[uid];
+    if (completer != null) {
+      return completer.future;
+    }
+
+    return Future<UserPreferencesData?>.value(preferences[uid]);
+  }
+
+  @override
+  Future<void> savePreferences(
+    String uid,
+    UserPreferencesData preferences,
+  ) async {
+    savedPreferences[uid] = preferences;
+  }
 }

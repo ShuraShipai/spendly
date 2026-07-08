@@ -36,7 +36,11 @@ class SavedExpenseCard extends StatelessWidget {
               ),
               child: SizedBox.square(
                 dimension: 42,
-                child: Icon(expense.category.icon, color: Colors.white, size: 20),
+                child: Icon(
+                  expense.category.icon,
+                  color: Colors.white,
+                  size: 20,
+                ),
               ),
             ),
             const SizedBox(width: AppSpacing.sm),

@@ -34,10 +34,15 @@ class SettingsProvider extends ChangeNotifier {
   double _monthlyBudget = _defaultMonthlyBudget;
   final Map<String, double> _categoryBudgets = {..._defaultCategoryBudgets};
   List<ExpenseCategory> _customCategories = const [];
-  String? _loadedUserId;
+  String? _boundUserId;
   bool _isLoadingCategories = false;
   bool _isLoadingBudget = false;
   String? _errorMessage;
+  int _categoryLoadVersion = 0;
+  int _budgetLoadVersion = 0;
+  int _budgetSaveVersion = 0;
+  _PendingBudgetSave? _pendingBudgetSave;
+  Future<void>? _budgetSaveTask;
 
   double get monthlyBudget => _monthlyBudget;
   bool get isLoadingCategories => _isLoadingCategories;
@@ -62,16 +67,14 @@ class SettingsProvider extends ChangeNotifier {
   }
 
   Future<void> bindUser(String? uid) async {
-    if (_loadedUserId == uid) {
+    if (_boundUserId == uid) {
       return;
     }
 
-    _loadedUserId = uid;
-    _customCategories = const [];
-    _monthlyBudget = _defaultMonthlyBudget;
-    _categoryBudgets
-      ..clear()
-      ..addAll(_defaultCategoryBudgets);
+    _boundUserId = uid;
+    _categoryLoadVersion++;
+    _budgetLoadVersion++;
+    _resetUserState();
     _errorMessage = null;
 
     if (uid == null) {
@@ -132,34 +135,49 @@ class SettingsProvider extends ChangeNotifier {
   }
 
   Future<void> loadCategories(String? uid) async {
-    if (uid == null || _isLoadingCategories) {
+    if (uid == null) {
       return;
     }
 
+    _bindUserForExplicitLoad(uid);
+    final loadVersion = ++_categoryLoadVersion;
     _isLoadingCategories = true;
     notifyListeners();
 
     try {
-      _customCategories = await categoryService.loadCustomCategories(uid);
-      _loadedUserId = uid;
+      final categories = await categoryService.loadCustomCategories(uid);
+      if (!_isCurrentCategoryLoad(uid, loadVersion)) {
+        return;
+      }
+      _customCategories = categories;
+      _boundUserId = uid;
     } catch (_) {
-      _errorMessage = 'Could not load categories.';
+      if (_isCurrentCategoryLoad(uid, loadVersion)) {
+        _errorMessage = 'Could not load categories.';
+      }
     } finally {
-      _isLoadingCategories = false;
-      notifyListeners();
+      if (_isCurrentCategoryLoad(uid, loadVersion)) {
+        _isLoadingCategories = false;
+        notifyListeners();
+      }
     }
   }
 
   Future<void> loadBudget(String? uid) async {
-    if (uid == null || _isLoadingBudget) {
+    if (uid == null) {
       return;
     }
 
+    _bindUserForExplicitLoad(uid);
+    final loadVersion = ++_budgetLoadVersion;
     _isLoadingBudget = true;
     notifyListeners();
 
     try {
       final budget = await _settingsService.loadBudget(uid);
+      if (!_isCurrentBudgetLoad(uid, loadVersion)) {
+        return;
+      }
       if (budget == null) {
         _errorMessage = null;
       } else {
@@ -174,10 +192,14 @@ class SettingsProvider extends ChangeNotifier {
       }
       _errorMessage = null;
     } catch (_) {
-      _errorMessage = 'Could not load budgets.';
+      if (_isCurrentBudgetLoad(uid, loadVersion)) {
+        _errorMessage = 'Could not load budgets.';
+      }
     } finally {
-      _isLoadingBudget = false;
-      notifyListeners();
+      if (_isCurrentBudgetLoad(uid, loadVersion)) {
+        _isLoadingBudget = false;
+        notifyListeners();
+      }
     }
   }
 
@@ -208,7 +230,7 @@ class SettingsProvider extends ChangeNotifier {
       await categoryService.saveCustomCategory(uid, category);
       _customCategories = [..._customCategories, category]
         ..sort((a, b) => a.label.compareTo(b.label));
-      _loadedUserId = uid;
+      _boundUserId = uid;
       _errorMessage = null;
       notifyListeners();
       return category;
@@ -263,28 +285,95 @@ class SettingsProvider extends ChangeNotifier {
   }
 
   void _persistBudgetIfBound() {
-    final uid = _loadedUserId;
+    final uid = _boundUserId;
     if (uid == null) {
       return;
     }
-    _persistBudget(uid);
+    _queueBudgetSave(uid, _currentBudgetData);
   }
 
-  Future<void> _persistBudget(String uid) async {
-    try {
-      await _settingsService.saveBudget(
-        uid,
-        UserBudgetData(
-          monthlyBudgetCents: (_monthlyBudget * 100).round(),
-          categoryBudgetCents: _categoryBudgets.map(
-            (key, value) => MapEntry(key, (value * 100).round()),
-          ),
-        ),
-      );
-      _errorMessage = null;
-    } catch (_) {
-      _errorMessage = 'Could not save budgets.';
-      notifyListeners();
+  UserBudgetData get _currentBudgetData {
+    return UserBudgetData(
+      monthlyBudgetCents: (_monthlyBudget * 100).round(),
+      categoryBudgetCents: _categoryBudgets.map(
+        (key, value) => MapEntry(key, (value * 100).round()),
+      ),
+    );
+  }
+
+  void _queueBudgetSave(String uid, UserBudgetData budget) {
+    _pendingBudgetSave = _PendingBudgetSave(
+      uid: uid,
+      budget: budget,
+      version: ++_budgetSaveVersion,
+    );
+    _budgetSaveTask ??= _drainBudgetSaves();
+  }
+
+  Future<void> _drainBudgetSaves() async {
+    while (_pendingBudgetSave != null) {
+      final save = _pendingBudgetSave!;
+      _pendingBudgetSave = null;
+
+      try {
+        await _settingsService.saveBudget(save.uid, save.budget);
+        if (_isCurrentBudgetSave(save)) {
+          _errorMessage = null;
+        }
+      } catch (_) {
+        if (_isCurrentBudgetSave(save)) {
+          _errorMessage = 'Could not save budgets.';
+          notifyListeners();
+        }
+      }
+    }
+    _budgetSaveTask = null;
+    if (_pendingBudgetSave != null) {
+      _budgetSaveTask = _drainBudgetSaves();
     }
   }
+
+  bool _isCurrentCategoryLoad(String uid, int version) {
+    return _boundUserId == uid && _categoryLoadVersion == version;
+  }
+
+  bool _isCurrentBudgetLoad(String uid, int version) {
+    return _boundUserId == uid && _budgetLoadVersion == version;
+  }
+
+  bool _isCurrentBudgetSave(_PendingBudgetSave save) {
+    return _boundUserId == save.uid && _budgetSaveVersion == save.version;
+  }
+
+  void _bindUserForExplicitLoad(String uid) {
+    if (_boundUserId == uid) {
+      return;
+    }
+
+    _boundUserId = uid;
+    _categoryLoadVersion++;
+    _budgetLoadVersion++;
+    _resetUserState();
+    _errorMessage = null;
+  }
+
+  void _resetUserState() {
+    _customCategories = const [];
+    _monthlyBudget = _defaultMonthlyBudget;
+    _categoryBudgets
+      ..clear()
+      ..addAll(_defaultCategoryBudgets);
+  }
+}
+
+class _PendingBudgetSave {
+  const _PendingBudgetSave({
+    required this.uid,
+    required this.budget,
+    required this.version,
+  });
+
+  final String uid;
+  final UserBudgetData budget;
+  final int version;
 }

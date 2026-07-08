@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/theme/app_spacing.dart';
-import '../../../core/widgets/expense_summary_tile.dart';
+import '../../../core/widgets/summary_tile.dart';
 import '../../expenses/models/expense_entry.dart';
 
 class RecentExpensesList extends StatelessWidget {
@@ -22,7 +22,7 @@ class RecentExpensesList extends StatelessWidget {
         Text('Recent expenses', style: Theme.of(context).textTheme.titleMedium),
         const SizedBox(height: AppSpacing.sm),
         for (final expense in expenses) ...[
-          ExpenseSummaryTile(
+          SummaryTile(
             title: expense.displayTitle,
             subtitle:
                 '${expense.category.label} · ${expense.paymentMethod.label}',

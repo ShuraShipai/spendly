@@ -36,16 +36,27 @@ class AppProviders extends StatelessWidget {
           create: (context) => AuthProvider(
             authService: context.read<AuthService>(),
             userFirestoreService: context.read<UserFirestoreService>(),
+            deleteUserData: (uid) async {
+              await Future.wait([
+                context.read<ExpenseService>().deleteAllExpenses(uid),
+                context.read<CustomCategoryService>().deleteAllCustomCategories(
+                  uid,
+                ),
+                context.read<SettingsFirestoreService>().deleteSettings(uid),
+              ]);
+            },
           ),
         ),
         ChangeNotifierProxyProvider<AuthProvider, AppStateProvider>(
           create: (context) => AppStateProvider(
             settingsService: context.read<SettingsFirestoreService>(),
           ),
-          update: (_, authProvider, appStateProvider) {
+          update: (context, authProvider, appStateProvider) {
             final provider =
                 appStateProvider ??
-                AppStateProvider(settingsService: SettingsFirestoreService());
+                AppStateProvider(
+                  settingsService: context.read<SettingsFirestoreService>(),
+                );
             unawaited(provider.bindUser(authProvider.user?.uid));
             return provider;
           },
@@ -53,10 +64,10 @@ class AppProviders extends StatelessWidget {
         ChangeNotifierProxyProvider<AuthProvider, ExpenseProvider>(
           create: (context) =>
               ExpenseProvider(expenseService: context.read<ExpenseService>()),
-          update: (_, authProvider, expenseProvider) {
+          update: (context, authProvider, expenseProvider) {
             final provider =
                 expenseProvider ??
-                ExpenseProvider(expenseService: ExpenseService());
+                ExpenseProvider(expenseService: context.read<ExpenseService>());
             provider.bindUser(authProvider.user?.uid);
             return provider;
           },
@@ -67,12 +78,12 @@ class AppProviders extends StatelessWidget {
             categoryService: context.read<CustomCategoryService>(),
             settingsService: context.read<SettingsFirestoreService>(),
           ),
-          update: (_, authProvider, settingsProvider) {
+          update: (context, authProvider, settingsProvider) {
             final provider =
                 settingsProvider ??
                 SettingsProvider(
-                  categoryService: CustomCategoryService(),
-                  settingsService: SettingsFirestoreService(),
+                  categoryService: context.read<CustomCategoryService>(),
+                  settingsService: context.read<SettingsFirestoreService>(),
                 );
             unawaited(provider.bindUser(authProvider.user?.uid));
             return provider;
@@ -100,7 +111,12 @@ class AppProviders extends StatelessWidget {
                 settingsProvider,
                 alerts,
               ) {
-                final provider = alerts ?? BudgetAlertProvider();
+                final provider =
+                    alerts ??
+                    BudgetAlertProvider(
+                      localNotificationService: context
+                          .read<BudgetLocalNotificationService>(),
+                    );
                 provider.updateAlerts(
                   alertsEnabled: appStateProvider.budgetAlertsEnabled,
                   expenseProvider: expenseProvider,

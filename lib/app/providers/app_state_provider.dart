@@ -57,6 +57,7 @@ class AppStateProvider extends ChangeNotifier {
 
     _userId = uid;
     _errorMessage = null;
+    _resetPreferences();
     if (uid == null) {
       notifyListeners();
       return;
@@ -154,11 +155,23 @@ class AppStateProvider extends ChangeNotifier {
           budgetAlertsEnabled: _budgetAlertsEnabled,
         ),
       );
-      _errorMessage = null;
+      if (_userId == uid) {
+        _errorMessage = null;
+      }
     } catch (_) {
-      _errorMessage = 'Could not save preferences.';
-      notifyListeners();
+      if (_userId == uid) {
+        _errorMessage = 'Could not save preferences.';
+        notifyListeners();
+      }
     }
+  }
+
+  void _resetPreferences() {
+    _themeMode = ThemeMode.system;
+    _currency = CurrencyPreference.inr;
+    _weekStart = WeekStartPreference.monday;
+    _budgetAlertsEnabled = true;
+    _isLoadingPreferences = false;
   }
 
   ThemeMode _themeModeFromStorage(String value) {

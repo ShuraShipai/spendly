@@ -7,6 +7,7 @@ import '../models/expense_category.dart';
 import '../models/expense_entry.dart';
 import '../models/payment_method.dart';
 import '../providers/expense_provider.dart';
+import '../../settings/providers/settings_provider.dart';
 import '../widgets/category_chip.dart';
 import '../widgets/edit_amount_editor.dart';
 import '../widgets/edit_expense_header.dart';
@@ -31,7 +32,9 @@ class _EditExpenseScreenState extends State<EditExpenseScreen> {
   var _date = DateTime.now();
   var _paymentMethod = PaymentMethod.cash;
   var _loaded = false;
+  var _isSaving = false;
   String? _amountError;
+  String? _saveError;
 
   @override
   void initState() {
@@ -76,10 +79,14 @@ class _EditExpenseScreenState extends State<EditExpenseScreen> {
       _loadExpense(expense);
     }
 
-    final categories = [
-      ...ExpenseCategory.defaults,
-      if (!ExpenseCategory.defaults.contains(_category)) _category,
-    ];
+    final settingsProvider = _watchSettingsProvider(context);
+    final categories = _mergeCategories(
+      expenseProvider.availableCategories(),
+      settingsProvider?.categories ?? const [],
+    );
+    if (!categories.contains(_category)) {
+      categories.add(_category);
+    }
 
     return Scaffold(
       body: SafeArea(
@@ -93,7 +100,7 @@ class _EditExpenseScreenState extends State<EditExpenseScreen> {
           children: [
             EditExpenseHeader(
               onCancel: () => Navigator.of(context).pop(),
-              onSave: () => _save(expense.id),
+              onSave: _isSaving ? () {} : () => _save(expense.id),
             ),
             const SizedBox(height: AppSpacing.lg),
             EditAmountEditor(
@@ -120,6 +127,15 @@ class _EditExpenseScreenState extends State<EditExpenseScreen> {
                   ),
               ],
             ),
+            if (_saveError != null) ...[
+              const SizedBox(height: AppSpacing.sm),
+              Text(
+                _saveError!,
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: Theme.of(context).colorScheme.error,
+                ),
+              ),
+            ],
             const SizedBox(height: AppSpacing.lg),
             const SectionLabel('NOTE'),
             const SizedBox(height: AppSpacing.xs),
@@ -167,13 +183,39 @@ class _EditExpenseScreenState extends State<EditExpenseScreen> {
             ),
             const SizedBox(height: AppSpacing.xxxl),
             MintActionButton(
-              label: 'Save changes',
+              label: _isSaving ? 'Saving...' : 'Save changes',
+              isEnabled: !_isSaving,
               onPressed: () => _save(expense.id),
             ),
           ],
         ),
       ),
     );
+  }
+
+  SettingsProvider? _watchSettingsProvider(BuildContext context) {
+    try {
+      return context.watch<SettingsProvider>();
+    } on ProviderNotFoundException {
+      return null;
+    }
+  }
+
+  List<ExpenseCategory> _mergeCategories(
+    List<ExpenseCategory> primary,
+    List<ExpenseCategory> secondary,
+  ) {
+    final categories = [...primary];
+    for (final category in secondary) {
+      final alreadyIncluded = categories.any(
+        (existing) =>
+            existing.id == category.id || existing.hasSameLabel(category.label),
+      );
+      if (!alreadyIncluded) {
+        categories.add(category);
+      }
+    }
+    return categories;
   }
 
   Future<void> _pickDate() async {
@@ -190,7 +232,11 @@ class _EditExpenseScreenState extends State<EditExpenseScreen> {
     }
   }
 
-  void _save(String expenseId) {
+  Future<void> _save(String expenseId) async {
+    if (_isSaving) {
+      return;
+    }
+
     final expenseProvider = context.read<ExpenseProvider>();
     final navigator = Navigator.of(context);
     final expense = expenseProvider.expenseById(expenseId);
@@ -200,7 +246,10 @@ class _EditExpenseScreenState extends State<EditExpenseScreen> {
 
     final amount = double.tryParse(_amountController.text.trim());
     if (amount == null || amount <= 0) {
-      setState(() => _amountError = 'Enter an amount greater than ₹0');
+      setState(() {
+        _amountError = 'Enter an amount greater than ₹0';
+        _saveError = null;
+      });
       return;
     }
 
@@ -213,8 +262,25 @@ class _EditExpenseScreenState extends State<EditExpenseScreen> {
       note: note.isEmpty ? null : note,
     );
 
-    expenseProvider.updateExpense(updatedExpense);
-    navigator.popUntil((route) => route.isFirst);
+    setState(() {
+      _isSaving = true;
+      _saveError = null;
+    });
+
+    final saved = await expenseProvider.updateExpense(updatedExpense);
+    if (!mounted) {
+      return;
+    }
+
+    if (saved) {
+      navigator.popUntil((route) => route.isFirst);
+      return;
+    }
+
+    setState(() {
+      _isSaving = false;
+      _saveError = expenseProvider.errorMessage ?? 'Could not update expense.';
+    });
   }
 
   InputDecoration _fieldDecoration(BuildContext context, String hintText) {

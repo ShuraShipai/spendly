@@ -74,4 +74,18 @@ class CustomCategoryService {
 
     await _customCategories(uid).doc(categoryId).delete();
   }
+
+  Future<void> deleteAllCustomCategories(String uid) async {
+    if (_usesMemory) {
+      _memoryStore.remove(uid);
+      return;
+    }
+
+    final snapshot = await _customCategories(uid).get();
+    final batch = firestore!.batch();
+    for (final doc in snapshot.docs) {
+      batch.delete(doc.reference);
+    }
+    await batch.commit();
+  }
 }

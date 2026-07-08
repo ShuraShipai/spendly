@@ -15,8 +15,10 @@ class AuthProvider extends ChangeNotifier {
   AuthProvider({
     required AuthService authService,
     required UserFirestoreService userFirestoreService,
+    Future<void> Function(String uid)? deleteUserData,
   }) : _authService = authService,
-       _userFirestoreService = userFirestoreService {
+       _userFirestoreService = userFirestoreService,
+       _deleteUserData = deleteUserData {
     _authSubscription = _authService.authStateChanges().listen(
       _setFirebaseUser,
     );
@@ -24,8 +26,11 @@ class AuthProvider extends ChangeNotifier {
 
   final AuthService _authService;
   final UserFirestoreService _userFirestoreService;
+  final Future<void> Function(String uid)? _deleteUserData;
 
   StreamSubscription<firebase_auth.User?>? _authSubscription;
+  var _authStateVersion = 0;
+  var _isDisposed = false;
 
   AuthStatus _status = AuthStatus.unknown;
   AppUser? _user;
@@ -168,9 +173,9 @@ class AuthProvider extends ChangeNotifier {
     }
 
     await _runAuthTask(() async {
-      await _userFirestoreService.deleteKnownUserData(uid);
-      await _userFirestoreService.deleteUser(uid);
       await _authService.deleteCurrentUser();
+      await _deleteUserData?.call(uid);
+      await _userFirestoreService.deleteUser(uid);
     });
   }
 
@@ -183,25 +188,39 @@ class AuthProvider extends ChangeNotifier {
   }
 
   Future<void> _setFirebaseUser(firebase_auth.User? firebaseUser) async {
+    final version = ++_authStateVersion;
     if (firebaseUser == null) {
+      if (!_canApplyAuthState(version)) {
+        return;
+      }
       _user = null;
       _isEmailVerified = true;
       _status = AuthStatus.unauthenticated;
-      notifyListeners();
+      _notifyIfActive();
       return;
     }
 
-    _user =
-        await _userFirestoreService.getUser(firebaseUser.uid) ??
-        AppUser(
-          uid: firebaseUser.uid,
-          email: firebaseUser.email ?? '',
-          displayName: firebaseUser.displayName,
-          photoUrl: firebaseUser.photoURL,
-        );
+    final fallbackUser = AppUser(
+      uid: firebaseUser.uid,
+      email: firebaseUser.email ?? '',
+      displayName: firebaseUser.displayName,
+      photoUrl: firebaseUser.photoURL,
+    );
+    AppUser appUser;
+    try {
+      appUser =
+          await _userFirestoreService.getUser(firebaseUser.uid) ?? fallbackUser;
+    } catch (_) {
+      appUser = fallbackUser;
+    }
+
+    if (!_canApplyAuthState(version)) {
+      return;
+    }
+    _user = appUser;
     _isEmailVerified = firebaseUser.emailVerified;
     _status = AuthStatus.authenticated;
-    notifyListeners();
+    _notifyIfActive();
   }
 
   Future<void> _runAuthTask(Future<void> Function() task) async {
@@ -220,10 +239,24 @@ class AuthProvider extends ChangeNotifier {
   }
 
   void _setLoading(bool value) {
+    if (_isDisposed) {
+      return;
+    }
     if (_isLoading == value) {
       return;
     }
     _isLoading = value;
+    notifyListeners();
+  }
+
+  bool _canApplyAuthState(int version) {
+    return !_isDisposed && version == _authStateVersion;
+  }
+
+  void _notifyIfActive() {
+    if (_isDisposed) {
+      return;
+    }
     notifyListeners();
   }
 
@@ -258,6 +291,8 @@ class AuthProvider extends ChangeNotifier {
 
   @override
   void dispose() {
+    _isDisposed = true;
+    _authStateVersion++;
     _authSubscription?.cancel();
     super.dispose();
   }

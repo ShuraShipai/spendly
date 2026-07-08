@@ -15,6 +15,7 @@ class ExpenseProvider extends ChangeNotifier {
 
   final ExpenseService _expenseService;
   final List<ExpenseEntry> _expenses = [];
+  final Map<String, Future<void>> _pendingDeleteWrites = {};
   StreamSubscription<List<ExpenseEntry>>? _expenseSubscription;
   String? _userId;
   bool _isLoading = false;
@@ -290,16 +291,31 @@ class ExpenseProvider extends ChangeNotifier {
     }
   }
 
-  void updateExpense(ExpenseEntry expense) {
+  Future<bool> updateExpense(ExpenseEntry expense) async {
+    final previousIndex = _expenses.indexWhere(
+      (entry) => entry.id == expense.id,
+    );
+    final previousExpense = previousIndex >= 0
+        ? _expenses[previousIndex]
+        : null;
     _upsertExpense(expense);
     final uid = _userId;
-    if (uid != null) {
-      unawaited(
-        _expenseService.updateExpense(uid, expense).catchError((_) {
-          _errorMessage = 'Could not update expense.';
-          notifyListeners();
-        }),
-      );
+    if (uid == null) {
+      return true;
+    }
+
+    try {
+      await _expenseService.updateExpense(uid, expense);
+      return true;
+    } catch (_) {
+      _errorMessage = 'Could not update expense.';
+      if (previousExpense != null) {
+        _upsertExpense(previousExpense);
+      } else {
+        _expenses.removeWhere((entry) => entry.id == expense.id);
+        notifyListeners();
+      }
+      return false;
     }
   }
 
@@ -314,12 +330,20 @@ class ExpenseProvider extends ChangeNotifier {
 
     final uid = _userId;
     if (uid != null) {
-      unawaited(
-        _expenseService.softDeleteExpense(uid, id).catchError((_) {
-          _errorMessage = 'Could not delete expense.';
-          _upsertExpense(expense);
-        }),
-      );
+      late final Future<void> write;
+      write = _expenseService
+          .softDeleteExpense(uid, id)
+          .catchError((_) {
+            _errorMessage = 'Could not delete expense.';
+            _upsertExpense(expense);
+          })
+          .whenComplete(() {
+            if (identical(_pendingDeleteWrites[id], write)) {
+              _pendingDeleteWrites.remove(id);
+            }
+          });
+      _pendingDeleteWrites[id] = write;
+      unawaited(write);
     }
     return expense;
   }
@@ -334,12 +358,20 @@ class ExpenseProvider extends ChangeNotifier {
 
     final uid = _userId;
     if (uid != null) {
-      unawaited(
-        _expenseService.restoreExpense(uid, expense).catchError((_) {
-          _errorMessage = 'Could not restore expense.';
-          notifyListeners();
-        }),
-      );
+      unawaited(_restoreAfterPendingDelete(uid, expense));
+    }
+  }
+
+  Future<void> _restoreAfterPendingDelete(
+    String uid,
+    ExpenseEntry expense,
+  ) async {
+    try {
+      await _pendingDeleteWrites[expense.id];
+      await _expenseService.restoreExpense(uid, expense);
+    } catch (_) {
+      _errorMessage = 'Could not restore expense.';
+      notifyListeners();
     }
   }
 
