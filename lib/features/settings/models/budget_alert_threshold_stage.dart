@@ -1,0 +1,1 @@
+enum BudgetAlertThresholdStage { warning, exceeded }

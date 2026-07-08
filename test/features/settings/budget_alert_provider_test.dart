@@ -202,7 +202,7 @@ void main() {
       expenses.addExpense(
         ExpenseEntry(
           id: 'coffee-3',
-          amount: 200,
+          amount: 250,
           category: coffee,
           date: month,
           paymentMethod: PaymentMethod.upi,
@@ -215,8 +215,101 @@ void main() {
         referenceDate: month,
       );
 
-      expect(alerts.pendingAlert, isNull);
+      expect(alerts.pendingAlert?.type, BudgetExceededAlertType.category);
+      expect(alerts.pendingAlert?.category, coffee);
+      expect(alerts.pendingAlert?.severity, BudgetAlertSeverity.exceeded);
+      expect(alerts.pendingAlert?.title, 'Heads up — 105% used');
+      expect(notifications.sent, hasLength(2));
+      expect(notifications.sent.first.id, isNot(notifications.sent.last.id));
+      expect(notifications.sent.last.title, 'Heads up — 105% used');
+    });
+
+    test('does not round warning titles up to 100 percent early', () {
+      final alerts = BudgetAlertProvider();
+      final expenses = ExpenseProvider();
+      final settings = SettingsProvider(
+        categoryService: CustomCategoryService.memory(),
+      );
+      final month = DateTime(2026, 7);
+
+      settings.setMonthlyBudget(1000);
+      expenses.addExpense(
+        ExpenseEntry(
+          id: 'rent',
+          amount: 995,
+          category: ExpenseCategory.rent,
+          date: month,
+          paymentMethod: PaymentMethod.card,
+        ),
+      );
+
+      alerts.updateAlerts(
+        alertsEnabled: true,
+        expenseProvider: expenses,
+        settingsProvider: settings,
+        referenceDate: month,
+      );
+
+      expect(alerts.pendingAlert?.severity, BudgetAlertSeverity.warning);
+      expect(alerts.pendingAlert?.title, 'Heads up — 99% used');
+    });
+
+    test('shown overall warning does not block exceeded alert later', () {
+      final notifications = _FakeBudgetLocalNotificationService();
+      final alerts = BudgetAlertProvider(
+        localNotificationService: notifications,
+      );
+      final expenses = ExpenseProvider();
+      final settings = SettingsProvider(
+        categoryService: CustomCategoryService.memory(),
+      );
+      final month = DateTime(2026, 7);
+
+      settings.setMonthlyBudget(100);
+      expenses.addExpense(
+        ExpenseEntry(
+          id: 'rent-warning',
+          amount: 80,
+          category: ExpenseCategory.rent,
+          date: month,
+          paymentMethod: PaymentMethod.card,
+        ),
+      );
+
+      alerts.updateAlerts(
+        alertsEnabled: true,
+        expenseProvider: expenses,
+        settingsProvider: settings,
+        referenceDate: month,
+      );
+
+      final warningId = alerts.pendingAlert!.id;
+      expect(alerts.pendingAlert?.severity, BudgetAlertSeverity.warning);
       expect(notifications.sent, hasLength(1));
+      alerts.markAlertShown(warningId);
+
+      expenses.addExpense(
+        ExpenseEntry(
+          id: 'rent-exceeded',
+          amount: 25,
+          category: ExpenseCategory.rent,
+          date: month,
+          paymentMethod: PaymentMethod.card,
+        ),
+      );
+      alerts.updateAlerts(
+        alertsEnabled: true,
+        expenseProvider: expenses,
+        settingsProvider: settings,
+        referenceDate: month,
+      );
+
+      expect(alerts.pendingAlert?.type, BudgetExceededAlertType.overall);
+      expect(alerts.pendingAlert?.severity, BudgetAlertSeverity.exceeded);
+      expect(alerts.pendingAlert?.id, isNot(warningId));
+      expect(alerts.pendingAlert?.title, 'Heads up — 105% used');
+      expect(notifications.sent, hasLength(2));
+      expect(notifications.sent.first.id, isNot(notifications.sent.last.id));
     });
 
     test('exposes active threshold alerts for notification screens', () {
