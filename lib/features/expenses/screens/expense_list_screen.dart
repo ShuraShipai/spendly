@@ -254,6 +254,8 @@ class _ExpenseListScreenState extends State<ExpenseListScreen> {
     setState(() {
       _query = '';
       _isSearching = false;
+      _selectedCategoryIds.clear();
+      _selectedPaymentMethods.clear();
       _showAmountFilter = false;
       _amountRange = null;
     });

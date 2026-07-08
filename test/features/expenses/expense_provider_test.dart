@@ -47,6 +47,14 @@ void main() {
       expect(provider.totalSpentForWeek(julySecond), 210);
       expect(provider.expensesForMonth(july), hasLength(2));
       expect(provider.totalSpentForMonth(july), 420);
+      expect(
+        provider.totalSpentForCategoryForMonth(july, ExpenseCategory.food.id),
+        120,
+      );
+      expect(
+        provider.totalSpentForCategoryForMonth(july, ExpenseCategory.bills.id),
+        300,
+      );
     });
 
     test('uses local inclusive starts and exclusive ends for periods', () {

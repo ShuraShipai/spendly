@@ -12,6 +12,7 @@ import 'package:spendly/features/expenses/models/expense_entry.dart';
 import 'package:spendly/features/expenses/models/payment_method.dart';
 import 'package:spendly/features/expenses/providers/expense_provider.dart';
 import 'package:spendly/features/expenses/services/custom_category_service.dart';
+import 'package:spendly/features/expenses/screens/expense_list_screen.dart';
 import 'package:spendly/features/expenses/widgets/add_expense_flow_sheet.dart';
 import 'package:spendly/features/home/widgets/email_verification_banner.dart';
 import 'package:spendly/features/home/widgets/recent_expenses_list.dart';
@@ -340,6 +341,71 @@ void main() {
     expect(find.text('Coffee expense'), findsOneWidget);
     expect(find.text('Monthly internet bill · Today'), findsOneWidget);
     expect(find.text('Done'), findsOneWidget);
+  });
+
+  testWidgets('clears applied expense filters when returning to expenses', (
+    WidgetTester tester,
+  ) async {
+    final expenseProvider = ExpenseProvider();
+    expenseProvider.addExpense(
+      ExpenseEntry(
+        id: 'coffee',
+        amount: 120,
+        category: ExpenseCategory.food,
+        date: DateTime(2026, 7, 2),
+        paymentMethod: PaymentMethod.cash,
+        note: 'Coffee',
+      ),
+    );
+    expenseProvider.addExpense(
+      ExpenseEntry(
+        id: 'rent',
+        amount: 2000,
+        category: ExpenseCategory.rent,
+        date: DateTime(2026, 7, 2),
+        paymentMethod: PaymentMethod.card,
+        note: 'Rent',
+      ),
+    );
+
+    var resetToken = 0;
+
+    Future<void> pumpExpenses() async {
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: AppTheme.light,
+          home: Scaffold(
+            body: ChangeNotifierProvider.value(
+              value: expenseProvider,
+              child: ExpenseListScreen(temporaryStateResetToken: resetToken),
+            ),
+          ),
+        ),
+      );
+    }
+
+    await pumpExpenses();
+
+    await tester.tap(find.byIcon(Icons.tune_rounded));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Food'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Cash'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Apply filters'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('FILTERS'), findsOneWidget);
+    expect(find.text('Coffee'), findsOneWidget);
+    expect(find.text('Rent'), findsNothing);
+
+    resetToken += 1;
+    await pumpExpenses();
+    await tester.pumpAndSettle();
+
+    expect(find.text('FILTERS'), findsNothing);
+    expect(find.text('Coffee'), findsOneWidget);
+    expect(find.text('Rent'), findsOneWidget);
   });
 
   testWidgets('shows saved expense page without overflow on small screens', (
