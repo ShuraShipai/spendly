@@ -21,6 +21,8 @@ class CategoryPickerTile extends StatelessWidget {
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(18),
+      splashFactory: NoSplash.splashFactory,
+      overlayColor: WidgetStateProperty.all(Colors.transparent),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
