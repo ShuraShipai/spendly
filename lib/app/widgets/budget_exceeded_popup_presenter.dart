@@ -4,19 +4,25 @@ import 'package:provider/provider.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../features/settings/providers/budget_alert_provider.dart';
+import '../../features/settings/screens/category_budgets_screen.dart';
 
 import '../../features/settings/widgets/budget_alert_card.dart' as alert_card;
+import '../app_route_tracker.dart';
 import '../app_routes.dart';
+
+enum _BudgetAlertAction { adjustBudget, viewBudget }
 
 class BudgetExceededPopupPresenter extends StatefulWidget {
   const BudgetExceededPopupPresenter({
     required this.child,
     required this.navigatorKey,
+    required this.routeTracker,
     super.key,
   });
 
   final Widget child;
   final GlobalKey<NavigatorState> navigatorKey;
+  final AppRouteTracker routeTracker;
 
   @override
   State<BudgetExceededPopupPresenter> createState() =>
@@ -65,7 +71,7 @@ class _BudgetExceededPopupPresenterState
       return;
     }
 
-    final shouldOpenBudgets = await showDialog<bool>(
+    final action = await showDialog<_BudgetAlertAction>(
       context: navigatorContext,
       barrierDismissible: true,
       builder: (context) => _BudgetExceededDialog(alert: alert),
@@ -78,8 +84,10 @@ class _BudgetExceededPopupPresenterState
     context.read<BudgetAlertProvider>().markAlertShown(alert.id);
     _visibleAlertId = null;
 
-    if (shouldOpenBudgets == true) {
-      widget.navigatorKey.currentState?.pushNamed(AppRoutes.categoryBudgets);
+    if (action == _BudgetAlertAction.adjustBudget) {
+      _openBudgetEditor(alert);
+    } else if (action == _BudgetAlertAction.viewBudget) {
+      _viewBudget();
     }
 
     _scheduleAlert(context.read<BudgetAlertProvider>().pendingAlert);
@@ -88,6 +96,38 @@ class _BudgetExceededPopupPresenterState
   @override
   Widget build(BuildContext context) {
     return widget.child;
+  }
+
+  bool get _isOnBudgetsScreen {
+    return widget.routeTracker.currentRouteName == AppRoutes.categoryBudgets;
+  }
+
+  void _viewBudget() {
+    if (_isOnBudgetsScreen) {
+      return;
+    }
+
+    widget.navigatorKey.currentState?.pushNamed(AppRoutes.categoryBudgets);
+  }
+
+  void _openBudgetEditor(BudgetExceededAlert alert) {
+    final request = alert.type == BudgetExceededAlertType.overall
+        ? const BudgetEditorRequest.overall()
+        : BudgetEditorRequest.category(alert.category!.id);
+    final navigator = widget.navigatorKey.currentState;
+    if (navigator == null) {
+      return;
+    }
+
+    if (_isOnBudgetsScreen) {
+      navigator.pushReplacementNamed(
+        AppRoutes.categoryBudgets,
+        arguments: request,
+      );
+      return;
+    }
+
+    navigator.pushNamed(AppRoutes.categoryBudgets, arguments: request);
   }
 }
 
@@ -116,14 +156,15 @@ class _BudgetExceededDialog extends StatelessWidget {
             title: alert.title,
             message: alert.message,
             progress: progress,
-            onAdjustBudget: () => Navigator.of(context).pop(true),
+            onAdjustBudget: () =>
+                Navigator.of(context).pop(_BudgetAlertAction.adjustBudget),
             onViewExpenses: alert.severity == BudgetAlertSeverity.exceeded
-                ? () => Navigator.of(context).pop(true)
+                ? () => Navigator.of(context).pop(_BudgetAlertAction.viewBudget)
                 : null,
           ),
           const SizedBox(height: AppSpacing.sm),
           TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
+            onPressed: () => Navigator.of(context).pop(),
             style: TextButton.styleFrom(foregroundColor: AppColors.inkMuted),
             child: const Text('Dismiss'),
           ),

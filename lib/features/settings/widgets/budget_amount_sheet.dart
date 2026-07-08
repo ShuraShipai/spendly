@@ -67,6 +67,7 @@ class _BudgetAmountSheetState extends State<BudgetAmountSheet> {
               },
               decoration: InputDecoration(
                 prefixText: '₹ ',
+                hintText: '0',
                 errorText: _errorText,
                 filled: true,
                 fillColor: Theme.of(context).brightness == Brightness.dark
@@ -87,6 +88,10 @@ class _BudgetAmountSheetState extends State<BudgetAmountSheet> {
   }
 
   String get _initialText {
+    if (widget.initialAmount <= 0) {
+      return '';
+    }
+
     if (widget.initialAmount == widget.initialAmount.roundToDouble()) {
       return widget.initialAmount.round().toString();
     }

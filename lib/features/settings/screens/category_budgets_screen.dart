@@ -14,8 +14,19 @@ import '../widgets/budget_overview_card.dart';
 import '../widgets/category_budget_list.dart';
 import '../widgets/settings_section_header.dart';
 
+class BudgetEditorRequest {
+  const BudgetEditorRequest.overall() : categoryId = null;
+  const BudgetEditorRequest.category(this.categoryId);
+
+  final String? categoryId;
+
+  bool get isOverall => categoryId == null;
+}
+
 class CategoryBudgetsScreen extends StatefulWidget {
-  const CategoryBudgetsScreen({super.key});
+  const CategoryBudgetsScreen({this.initialEditorRequest, super.key});
+
+  final BudgetEditorRequest? initialEditorRequest;
 
   @override
   State<CategoryBudgetsScreen> createState() => _CategoryBudgetsScreenState();
@@ -23,7 +34,24 @@ class CategoryBudgetsScreen extends StatefulWidget {
 
 class _CategoryBudgetsScreenState extends State<CategoryBudgetsScreen> {
   String? _loadedCategoryUserId;
+  BudgetEditorRequest? _pendingEditorRequest;
+  var _isOpeningRequestedEditor = false;
   var _hasLoadedCategories = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _pendingEditorRequest = widget.initialEditorRequest;
+  }
+
+  @override
+  void didUpdateWidget(covariant CategoryBudgetsScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.initialEditorRequest != oldWidget.initialEditorRequest) {
+      _pendingEditorRequest = widget.initialEditorRequest;
+      _isOpeningRequestedEditor = false;
+    }
+  }
 
   @override
   void didChangeDependencies() {
@@ -50,6 +78,7 @@ class _CategoryBudgetsScreenState extends State<CategoryBudgetsScreen> {
     final settingsProvider = context.watch<SettingsProvider>();
     final expenseProvider = context.watch<ExpenseProvider>();
     final categories = settingsProvider.categories;
+    _scheduleRequestedEditor(settingsProvider);
     final month = DateTime.now();
     final monthExpenses = expenseProvider.expensesForMonth(month);
     final totalSpent = monthExpenses.fold<double>(
@@ -114,6 +143,78 @@ class _CategoryBudgetsScreenState extends State<CategoryBudgetsScreen> {
 
   void _resetCategoryBudgets() {
     context.read<SettingsProvider>().resetCategoryBudgets();
+  }
+
+  void _scheduleRequestedEditor(SettingsProvider settingsProvider) {
+    final request = _pendingEditorRequest;
+    if (request == null || _isOpeningRequestedEditor) {
+      return;
+    }
+
+    if (settingsProvider.isLoadingBudget) {
+      return;
+    }
+
+    final categoryId = request.categoryId;
+    if (categoryId != null &&
+        !settingsProvider.categories.any(
+          (category) => category.id == categoryId,
+        )) {
+      return;
+    }
+
+    _isOpeningRequestedEditor = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) {
+        return;
+      }
+
+      final request = _pendingEditorRequest;
+      if (request == null) {
+        _isOpeningRequestedEditor = false;
+        return;
+      }
+
+      _pendingEditorRequest = null;
+      _isOpeningRequestedEditor = false;
+      _openRequestedEditor(request);
+    });
+  }
+
+  void _openRequestedEditor(BudgetEditorRequest request) {
+    final settingsProvider = context.read<SettingsProvider>();
+    final categoryId = request.categoryId;
+
+    if (categoryId == null) {
+      _showBudgetSheet(
+        title: 'Monthly budget',
+        initialAmount: settingsProvider.monthlyBudget,
+        onSave: settingsProvider.setMonthlyBudget,
+      );
+      return;
+    }
+
+    ExpenseCategory? category;
+    for (final availableCategory in settingsProvider.categories) {
+      if (availableCategory.id == categoryId) {
+        category = availableCategory;
+        break;
+      }
+    }
+
+    if (category == null) {
+      return;
+    }
+    final selectedCategory = category;
+
+    _showBudgetSheet(
+      title: '${selectedCategory.label} budget',
+      initialAmount: settingsProvider.budgetForCategory(selectedCategory.id),
+      onSave: (amount) => context.read<SettingsProvider>().setCategoryBudget(
+        selectedCategory.id,
+        amount,
+      ),
+    );
   }
 
   void _showMonthlyBudgetActions(double currentBudget) {

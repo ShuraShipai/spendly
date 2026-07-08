@@ -122,7 +122,7 @@ class BudgetAlertCard extends StatelessWidget {
                   const SizedBox(width: AppSpacing.xs),
                   Expanded(
                     child: _BudgetAlertAction(
-                      label: 'View expenses',
+                      label: 'View budget',
                       foregroundColor: AppColors.card,
                       backgroundColor: AppColors.danger,
                       onPressed: onViewExpenses!,
