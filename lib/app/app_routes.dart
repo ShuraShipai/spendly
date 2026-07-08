@@ -43,7 +43,6 @@ class AppRoutes {
       home: (_) => const MainNavigationScreen(),
       settings: (_) => const Scaffold(body: SettingsScreen()),
       categories: (_) => const CategoriesScreen(),
-      categoryBudgets: (_) => const CategoryBudgetsScreen(),
       notifications: (_) => const NotificationsScreen(),
     };
   }
@@ -64,6 +63,15 @@ class AppRoutes {
         settings: settings,
         builder: (_) =>
             ResetPasswordScreen(resetCode: uri.queryParameters['oobCode']),
+      );
+    }
+
+    if (uri.path == categoryBudgets) {
+      return MaterialPageRoute<void>(
+        settings: settings,
+        builder: (_) => CategoryBudgetsScreen(
+          initialEditorRequest: _budgetEditorRequestFrom(settings),
+        ),
       );
     }
 
@@ -95,6 +103,15 @@ class AppRoutes {
   static String? _expenseIdFrom(RouteSettings settings) {
     final arguments = settings.arguments;
     if (arguments is String && arguments.isNotEmpty) {
+      return arguments;
+    }
+
+    return null;
+  }
+
+  static BudgetEditorRequest? _budgetEditorRequestFrom(RouteSettings settings) {
+    final arguments = settings.arguments;
+    if (arguments is BudgetEditorRequest) {
       return arguments;
     }
 
