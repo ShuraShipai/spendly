@@ -42,6 +42,23 @@ class ReportsProvider {
     return rows.map(_csvRow).join('\n');
   }
 
+  String allCsv() {
+    final rows = [
+      ['Date', 'Category', 'Payment method', 'Amount', 'Currency', 'Note'],
+      for (final expense in expenses)
+        [
+          _dateValue(expense.date),
+          expense.category.label,
+          expense.paymentMethod.label,
+          _amountValue(expense.amount),
+          expense.currencyCode,
+          expense.note ?? '',
+        ],
+    ];
+
+    return rows.map(_csvRow).join('\n');
+  }
+
   List<ExpenseEntry> _monthlyExpenses(DateTime referenceDate) {
     return expenses
         .where(

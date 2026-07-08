@@ -61,8 +61,7 @@ class SettingsScreen extends StatelessWidget {
     final reportsProvider = context.read<ReportsProvider>();
     showDialog<void>(
       context: context,
-      builder: (_) =>
-          ExportReportDialog(csv: reportsProvider.monthlyCsv(DateTime.now())),
+      builder: (_) => ExportReportDialog(csv: reportsProvider.allCsv()),
     );
   }
 

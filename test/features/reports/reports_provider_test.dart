@@ -75,4 +75,37 @@ void main() {
       ].join('\n'),
     );
   });
+
+  test('exports all expenses as escaped CSV', () {
+    final provider = ReportsProvider(
+      expenses: [
+        ExpenseEntry(
+          id: 'coffee',
+          amount: 120.5,
+          category: ExpenseCategory.food,
+          date: DateTime(2026, 7, 2),
+          paymentMethod: PaymentMethod.upi,
+          note: 'Coffee, "large"',
+        ),
+        ExpenseEntry(
+          id: 'june-food',
+          amount: 90,
+          category: ExpenseCategory.food,
+          date: DateTime(2026, 6, 30),
+          paymentMethod: PaymentMethod.cash,
+        ),
+      ],
+    );
+
+    final csv = provider.allCsv();
+
+    expect(
+      csv,
+      [
+        'Date,Category,Payment method,Amount,Currency,Note',
+        '2026-07-02,Food,UPI,120.50,INR,"Coffee, ""large"""',
+        '2026-06-30,Food,Cash,90,INR,',
+      ].join('\n'),
+    );
+  });
 }
