@@ -8,6 +8,7 @@ import '../features/auth/screens/sign_up_screen.dart';
 import '../features/auth/screens/welcome_screen.dart';
 import '../features/expenses/screens/edit_expense_screen.dart';
 import '../features/expenses/screens/expense_detail_screen.dart';
+import '../features/settings/models/budget_editor_request.dart';
 import '../features/settings/screens/categories_screen.dart';
 import '../features/settings/screens/category_budgets_screen.dart';
 import '../features/settings/screens/notifications_screen.dart';

@@ -248,6 +248,16 @@ class ExpenseProvider extends ChangeNotifier {
     return _totalFor(expensesForMonth(month));
   }
 
+  double totalSpentForCategoryForMonth(DateTime month, String categoryId) {
+    return _totalFor(
+      expensesForMonth(month)
+          .where((expense) {
+            return expense.category.id == categoryId;
+          })
+          .toList(growable: false),
+    );
+  }
+
   void addExpense(ExpenseEntry expense) {
     _upsertExpense(expense);
     final uid = _userId;
