@@ -21,14 +21,20 @@ class CategoryBudgetRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final progress = budget <= 0 ? 0.0 : (spent / budget).clamp(0.0, 1.0);
-    final warning = budget > 0 && progress >= 0.8 && progress < 1;
     final exceeded = budget > 0 && spent > budget;
+    final limitReached = budget > 0 && progress >= 0.9;
+    final warning = budget > 0 && progress >= 0.8 && progress < 0.9;
     final progressColor = exceeded
+        ? AppColors.danger
+        : limitReached
         ? AppColors.danger
         : warning
         ? AppColors.warning
         : category.color;
+    final trackColor = _tint(category.color);
     final amountColor = exceeded
+        ? AppColors.danger
+        : limitReached
         ? AppColors.danger
         : warning
         ? AppColors.warning
@@ -84,23 +90,26 @@ class CategoryBudgetRow extends StatelessWidget {
               ClipRRect(
                 borderRadius: BorderRadius.circular(5),
                 child: SizedBox(
+                  width: double.infinity,
                   height: 8,
                   child: Stack(
                     children: [
                       Positioned.fill(
                         child: DecoratedBox(
                           decoration: BoxDecoration(
-                            color: AppColors.line,
+                            color: trackColor,
                             borderRadius: BorderRadius.circular(5),
                           ),
                         ),
                       ),
                       FractionallySizedBox(
                         widthFactor: progress,
-                        child: DecoratedBox(
-                          decoration: BoxDecoration(
-                            color: progressColor,
-                            borderRadius: BorderRadius.circular(5),
+                        child: SizedBox.expand(
+                          child: DecoratedBox(
+                            decoration: BoxDecoration(
+                              color: progressColor,
+                              borderRadius: BorderRadius.circular(5),
+                            ),
                           ),
                         ),
                       ),
@@ -108,12 +117,14 @@ class CategoryBudgetRow extends StatelessWidget {
                   ),
                 ),
               ),
-              if (warning || exceeded) ...[
+              if (warning || limitReached || exceeded) ...[
                 const SizedBox(height: 5),
                 Text(
                   exceeded
-                      ? '${_formatAmount(spent - budget)} over limit'
-                      : '⚠ Approaching limit · ${(progress * 100).round()}%',
+                      ? 'Budget exceeded'
+                      : limitReached
+                      ? 'Limit reached'
+                      : 'Approaching limit',
                   style: Theme.of(context).textTheme.labelMedium?.copyWith(
                     color: progressColor,
                     fontSize: 10.5,
@@ -126,6 +137,10 @@ class CategoryBudgetRow extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  Color _tint(Color color) {
+    return Color.lerp(color, AppColors.card, 0.62)!;
   }
 
   String _formatAmount(double amount) {
