@@ -20,6 +20,9 @@ class BudgetExceededAlert {
     required this.message,
     required this.spent,
     required this.budget,
+    required this.timeLabel,
+    required this.sortPriority,
+    this.isUnread = false,
     this.category,
   });
 
@@ -30,6 +33,9 @@ class BudgetExceededAlert {
   final String message;
   final double spent;
   final double budget;
+  final String timeLabel;
+  final int sortPriority;
+  final bool isUnread;
   final ExpenseCategory? category;
 
   double get overAmount => spent - budget;
@@ -39,9 +45,14 @@ class BudgetAlertProvider extends ChangeNotifier {
   BudgetAlertProvider({this.localNotificationService});
 
   final BudgetLocalNotificationService? localNotificationService;
+  final List<BudgetExceededAlert> _activeAlerts = [];
   final List<BudgetExceededAlert> _pendingAlerts = [];
   final Set<String> _seenAlertStates = {};
   final Set<String> _deliveredNotificationStates = {};
+
+  List<BudgetExceededAlert> get activeAlerts {
+    return List.unmodifiable(_activeAlerts);
+  }
 
   BudgetExceededAlert? get pendingAlert {
     return _pendingAlerts.isEmpty ? null : _pendingAlerts.first;
@@ -54,10 +65,92 @@ class BudgetAlertProvider extends ChangeNotifier {
     DateTime? referenceDate,
   }) {
     if (!alertsEnabled || settingsProvider.isLoadingBudget) {
-      _clearPendingAlerts();
+      _clearActiveAlerts();
       return;
     }
 
+    final nextAlerts = budgetThresholdAlerts(
+      expenseProvider: expenseProvider,
+      settingsProvider: settingsProvider,
+      referenceDate: referenceDate,
+    );
+
+    final activeIds = nextAlerts.map((alert) => alert.id).toSet();
+    _seenAlertStates.removeWhere((id) => !activeIds.contains(id));
+    _deliveredNotificationStates.removeWhere((id) => !activeIds.contains(id));
+
+    for (final alert in nextAlerts) {
+      if (_deliveredNotificationStates.add(alert.id)) {
+        unawaited(_showLocalNotification(alert));
+      }
+    }
+
+    final filteredAlerts = nextAlerts
+        .where((alert) => !_seenAlertStates.contains(alert.id))
+        .toList(growable: false);
+    final activeAlertsChanged = !_sameAlerts(_activeAlerts, nextAlerts);
+    final pendingAlertsChanged = !_sameQueue(filteredAlerts);
+    if (!activeAlertsChanged && !pendingAlertsChanged) {
+      return;
+    }
+
+    if (activeAlertsChanged) {
+      _activeAlerts
+        ..clear()
+        ..addAll(nextAlerts);
+    }
+    if (pendingAlertsChanged) {
+      _pendingAlerts
+        ..clear()
+        ..addAll(filteredAlerts);
+    }
+    notifyListeners();
+  }
+
+  void markAlertShown(String alertId) {
+    final wasPending = _pendingAlerts.any((alert) => alert.id == alertId);
+    final wasSeen = _seenAlertStates.contains(alertId);
+    if (!wasPending && wasSeen) {
+      return;
+    }
+
+    _pendingAlerts.removeWhere((alert) => alert.id == alertId);
+    _seenAlertStates.add(alertId);
+    notifyListeners();
+  }
+
+  void _clearActiveAlerts() {
+    if (_activeAlerts.isEmpty && _pendingAlerts.isEmpty) {
+      return;
+    }
+    _activeAlerts.clear();
+    _pendingAlerts.clear();
+    notifyListeners();
+  }
+
+  Future<void> _showLocalNotification(BudgetExceededAlert alert) async {
+    final service = localNotificationService;
+    if (service == null) {
+      return;
+    }
+
+    try {
+      await service.showBudgetThresholdAlert(
+        id: alert.id,
+        title: alert.title,
+        body: alert.message,
+      );
+    } on Object {
+      // Budget alerts must not break provider updates if the OS denies or
+      // fails to display a local notification.
+    }
+  }
+
+  List<BudgetExceededAlert> budgetThresholdAlerts({
+    required ExpenseProvider expenseProvider,
+    required SettingsProvider settingsProvider,
+    DateTime? referenceDate,
+  }) {
     final month = _monthKey(referenceDate ?? DateTime.now());
     final monthExpenses = expenseProvider.expensesForMonth(
       referenceDate ?? DateTime.now(),
@@ -84,6 +177,9 @@ class BudgetAlertProvider extends ChangeNotifier {
               'You\'ve spent ${_formatAmount(totalSpent)} of your ${_formatAmount(settingsProvider.monthlyBudget)} Overall budget this month.',
           spent: totalSpent,
           budget: settingsProvider.monthlyBudget,
+          timeLabel: 'This month',
+          sortPriority: totalSpent > settingsProvider.monthlyBudget ? 0 : 1,
+          isUnread: totalSpent > settingsProvider.monthlyBudget,
         ),
       );
     }
@@ -120,69 +216,15 @@ class BudgetAlertProvider extends ChangeNotifier {
           spent: spent,
           budget: budget,
           category: category,
+          timeLabel: 'This month',
+          sortPriority: spent > budget ? 2 : 3,
+          isUnread: spent > budget,
         ),
       );
     }
 
-    final activeIds = nextAlerts.map((alert) => alert.id).toSet();
-    _seenAlertStates.removeWhere((id) => !activeIds.contains(id));
-    _deliveredNotificationStates.removeWhere((id) => !activeIds.contains(id));
-
-    for (final alert in nextAlerts) {
-      if (_deliveredNotificationStates.add(alert.id)) {
-        unawaited(_showLocalNotification(alert));
-      }
-    }
-
-    final filteredAlerts = nextAlerts
-        .where((alert) => !_seenAlertStates.contains(alert.id))
-        .toList(growable: false);
-    if (_sameQueue(filteredAlerts)) {
-      return;
-    }
-
-    _pendingAlerts
-      ..clear()
-      ..addAll(filteredAlerts);
-    notifyListeners();
-  }
-
-  void markAlertShown(String alertId) {
-    final wasPending = _pendingAlerts.any((alert) => alert.id == alertId);
-    final wasSeen = _seenAlertStates.contains(alertId);
-    if (!wasPending && wasSeen) {
-      return;
-    }
-
-    _pendingAlerts.removeWhere((alert) => alert.id == alertId);
-    _seenAlertStates.add(alertId);
-    notifyListeners();
-  }
-
-  void _clearPendingAlerts() {
-    if (_pendingAlerts.isEmpty) {
-      return;
-    }
-    _pendingAlerts.clear();
-    notifyListeners();
-  }
-
-  Future<void> _showLocalNotification(BudgetExceededAlert alert) async {
-    final service = localNotificationService;
-    if (service == null) {
-      return;
-    }
-
-    try {
-      await service.showBudgetThresholdAlert(
-        id: alert.id,
-        title: alert.title,
-        body: alert.message,
-      );
-    } on Object {
-      // Budget alerts must not break provider updates if the OS denies or
-      // fails to display a local notification.
-    }
+    nextAlerts.sort((a, b) => a.sortPriority.compareTo(b.sortPriority));
+    return nextAlerts;
   }
 
   bool _sameQueue(List<BudgetExceededAlert> alerts) {
@@ -192,6 +234,34 @@ class BudgetAlertProvider extends ChangeNotifier {
 
     for (var index = 0; index < alerts.length; index++) {
       if (_pendingAlerts[index].id != alerts[index].id) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  bool _sameAlerts(
+    List<BudgetExceededAlert> currentAlerts,
+    List<BudgetExceededAlert> nextAlerts,
+  ) {
+    if (currentAlerts.length != nextAlerts.length) {
+      return false;
+    }
+
+    for (var index = 0; index < nextAlerts.length; index++) {
+      final current = currentAlerts[index];
+      final next = nextAlerts[index];
+      if (current.id != next.id ||
+          current.severity != next.severity ||
+          current.type != next.type ||
+          current.title != next.title ||
+          current.message != next.message ||
+          current.spent != next.spent ||
+          current.budget != next.budget ||
+          current.timeLabel != next.timeLabel ||
+          current.sortPriority != next.sortPriority ||
+          current.isUnread != next.isUnread ||
+          current.category?.id != next.category?.id) {
         return false;
       }
     }
