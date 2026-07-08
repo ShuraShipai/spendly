@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 
 import '../../expenses/models/expense_category.dart';
 import '../../expenses/providers/expense_provider.dart';
+import '../models/budget_alert_threshold_stage.dart';
 import '../services/budget_local_notification_service.dart';
 import 'settings_provider.dart';
 
@@ -163,23 +164,31 @@ class BudgetAlertProvider extends ChangeNotifier {
 
     if (settingsProvider.monthlyBudget > 0 &&
         totalSpent >= settingsProvider.monthlyBudget * 0.8) {
-      final id = _stateId(month: month, type: BudgetExceededAlertType.overall);
+      final isExceeded = totalSpent > settingsProvider.monthlyBudget;
+      final stage = isExceeded
+          ? BudgetAlertThresholdStage.exceeded
+          : BudgetAlertThresholdStage.warning;
       final progress = totalSpent / settingsProvider.monthlyBudget;
       nextAlerts.add(
         BudgetExceededAlert(
-          id: id,
-          severity: totalSpent > settingsProvider.monthlyBudget
+          id: _stateId(
+            month: month,
+            type: BudgetExceededAlertType.overall,
+            stage: stage,
+          ),
+          severity: isExceeded
               ? BudgetAlertSeverity.exceeded
               : BudgetAlertSeverity.warning,
           type: BudgetExceededAlertType.overall,
-          title: 'Heads up — ${_formatPercent(progress)} used',
+          title:
+              'Heads up — ${_formatPercent(progress, allowHundredPercent: totalSpent >= settingsProvider.monthlyBudget)} used',
           message:
               'You\'ve spent ${_formatAmount(totalSpent)} of your ${_formatAmount(settingsProvider.monthlyBudget)} Overall budget this month.',
           spent: totalSpent,
           budget: settingsProvider.monthlyBudget,
           timeLabel: 'This month',
-          sortPriority: totalSpent > settingsProvider.monthlyBudget ? 0 : 1,
-          isUnread: totalSpent > settingsProvider.monthlyBudget,
+          sortPriority: isExceeded ? 0 : 1,
+          isUnread: isExceeded,
         ),
       );
     }
@@ -198,27 +207,32 @@ class BudgetAlertProvider extends ChangeNotifier {
         continue;
       }
 
-      final id = _stateId(
-        month: month,
-        type: BudgetExceededAlertType.category,
-        categoryId: category.id,
-      );
+      final isExceeded = spent > budget;
+      final stage = isExceeded
+          ? BudgetAlertThresholdStage.exceeded
+          : BudgetAlertThresholdStage.warning;
       nextAlerts.add(
         BudgetExceededAlert(
-          id: id,
-          severity: spent > budget
+          id: _stateId(
+            month: month,
+            type: BudgetExceededAlertType.category,
+            stage: stage,
+            categoryId: category.id,
+          ),
+          severity: isExceeded
               ? BudgetAlertSeverity.exceeded
               : BudgetAlertSeverity.warning,
           type: BudgetExceededAlertType.category,
-          title: 'Heads up — ${_formatPercent(progress)} used',
+          title:
+              'Heads up — ${_formatPercent(progress, allowHundredPercent: spent >= budget)} used',
           message:
               'You\'ve spent ${_formatAmount(spent)} of your ${_formatAmount(budget)} ${category.label} budget this month.',
           spent: spent,
           budget: budget,
           category: category,
           timeLabel: 'This month',
-          sortPriority: spent > budget ? 2 : 3,
-          isUnread: spent > budget,
+          sortPriority: isExceeded ? 2 : 3,
+          isUnread: isExceeded,
         ),
       );
     }
@@ -271,9 +285,10 @@ class BudgetAlertProvider extends ChangeNotifier {
   String _stateId({
     required String month,
     required BudgetExceededAlertType type,
+    required BudgetAlertThresholdStage stage,
     String? categoryId,
   }) {
-    return '$month:${type.name}:${categoryId ?? 'overall'}';
+    return '$month:${type.name}:${stage.name}:${categoryId ?? 'overall'}';
   }
 
   String _monthKey(DateTime date) {
@@ -289,7 +304,12 @@ class BudgetAlertProvider extends ChangeNotifier {
     return '₹${amount.toStringAsFixed(2)}';
   }
 
-  String _formatPercent(double value) {
-    return '${(value * 100).round()}%';
+  String _formatPercent(double value, {required bool allowHundredPercent}) {
+    final percent = (value * 100).round();
+    if (allowHundredPercent) {
+      return '$percent%';
+    }
+
+    return '${percent.clamp(0, 99)}%';
   }
 }
