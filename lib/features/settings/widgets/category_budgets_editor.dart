@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../../../core/theme/app_spacing.dart';
 import '../../expenses/models/expense_category.dart';
 import '../models/budget_editor_request.dart';
 import '../providers/settings_provider.dart';
 import 'budget_amount_sheet.dart';
+import 'monthly_budget_actions_sheet.dart';
 
 typedef CategoryBudgetsChildBuilder =
     Widget Function(BuildContext context, CategoryBudgetsEditorActions actions);
@@ -166,61 +166,20 @@ class _CategoryBudgetsEditorState extends State<CategoryBudgetsEditor> {
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
-      builder: (_) => SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(
-            AppSpacing.lg,
-            AppSpacing.md,
-            AppSpacing.lg,
-            AppSpacing.lg,
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Monthly budget',
-                style: Theme.of(context).textTheme.titleMedium,
-              ),
-              const SizedBox(height: AppSpacing.md),
-              if (currentBudget <= 0)
-                ListTile(
-                  contentPadding: EdgeInsets.zero,
-                  title: const Text('Set limit'),
-                  onTap: () {
-                    Navigator.of(context).pop();
-                    _showBudgetSheet(
-                      title: 'Monthly budget',
-                      initialAmount: currentBudget,
-                      onSave: context.read<SettingsProvider>().setMonthlyBudget,
-                    );
-                  },
-                )
-              else ...[
-                ListTile(
-                  contentPadding: EdgeInsets.zero,
-                  title: const Text('Edit limit'),
-                  onTap: () {
-                    Navigator.of(context).pop();
-                    _showBudgetSheet(
-                      title: 'Monthly budget',
-                      initialAmount: currentBudget,
-                      onSave: context.read<SettingsProvider>().setMonthlyBudget,
-                    );
-                  },
-                ),
-                ListTile(
-                  contentPadding: EdgeInsets.zero,
-                  title: const Text('Reset to unlimited'),
-                  onTap: () {
-                    Navigator.of(context).pop();
-                    context.read<SettingsProvider>().setMonthlyBudget(0);
-                  },
-                ),
-              ],
-            ],
-          ),
-        ),
+      builder: (_) => MonthlyBudgetActionsSheet(
+        currentBudget: currentBudget,
+        onEditLimit: () {
+          Navigator.of(context).pop();
+          _showBudgetSheet(
+            title: 'Monthly budget',
+            initialAmount: currentBudget,
+            onSave: context.read<SettingsProvider>().setMonthlyBudget,
+          );
+        },
+        onResetLimit: () {
+          Navigator.of(context).pop();
+          context.read<SettingsProvider>().setMonthlyBudget(0);
+        },
       ),
     );
   }

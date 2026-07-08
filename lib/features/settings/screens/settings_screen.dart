@@ -3,19 +3,11 @@ import 'package:provider/provider.dart';
 
 import '../../../app/app_routes.dart';
 import '../../../app/providers/app_state_provider.dart';
-import '../../../core/theme/app_colors.dart';
-import '../../../core/theme/app_spacing.dart';
 import '../../auth/providers/auth_provider.dart';
-import '../widgets/danger_action.dart';
 import '../widgets/destructive_confirmation_dialog.dart';
 import '../widgets/edit_profile_sheet.dart';
-import '../widgets/mint_switch.dart';
-import '../widgets/profile_card.dart';
-import '../widgets/settings_divider.dart';
-import '../widgets/settings_navigation_card.dart';
+import '../widgets/settings_body.dart';
 import '../widgets/settings_option_sheet.dart';
-import '../widgets/settings_row.dart';
-import '../widgets/settings_section.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
@@ -24,152 +16,46 @@ class SettingsScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final authProvider = context.watch<AuthProvider>();
     final appState = context.watch<AppStateProvider>();
-    final user = authProvider.user;
     final platformBrightness = MediaQuery.platformBrightnessOf(context);
-    final displayName = user?.displayName;
-    final profileName = displayName == null || displayName.isEmpty
-        ? 'Signed in'
-        : displayName;
 
-    return SafeArea(
-      child: ListView(
-        padding: const EdgeInsets.fromLTRB(
-          AppSpacing.lg,
-          AppSpacing.lg,
-          AppSpacing.lg,
-          104,
-        ),
-        children: [
-          Text('Settings', style: Theme.of(context).textTheme.titleLarge),
-          const SizedBox(height: AppSpacing.md),
-          ProfileCard(
-            title: profileName,
-            subtitle: user?.email ?? 'No email available',
-            photoUrl: user?.photoUrl,
-            onTap: () => _showEditProfileSheet(context),
+    return SettingsBody(
+      user: authProvider.user,
+      appState: appState,
+      isAuthLoading: authProvider.isLoading,
+      platformBrightness: platformBrightness,
+      onEditProfile: () => _showEditProfileSheet(context),
+      onOpenCategories: () =>
+          Navigator.of(context).pushNamed(AppRoutes.categories),
+      onOpenCategoryBudgets: () =>
+          Navigator.of(context).pushNamed(AppRoutes.categoryBudgets),
+      onOpenNotifications: () =>
+          Navigator.of(context).pushNamed(AppRoutes.notifications),
+      onCurrencySelected: context.read<AppStateProvider>().setCurrency,
+      onWeekStartSelected: context.read<AppStateProvider>().setWeekStart,
+      onThemeModeChanged: context.read<AppStateProvider>().setThemeMode,
+      onBudgetAlertsChanged: context
+          .read<AppStateProvider>()
+          .setBudgetAlertsEnabled,
+      onExportData: () {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Open Insights to export monthly CSV.')),
+        );
+      },
+      onSignOut: () => _confirmSignOut(context),
+      onDeleteAccount: () => _confirmDeleteAccount(context),
+      onShowOptionSheet:
+          <T>({
+            required title,
+            required options,
+            required selectedValue,
+            required onSelected,
+          }) => _showOptionSheet<T>(
+            context: context,
+            title: title,
+            options: options,
+            selectedValue: selectedValue,
+            onSelected: onSelected,
           ),
-          const SizedBox(height: AppSpacing.md),
-          SettingsNavigationCard(
-            icon: Icons.category_rounded,
-            title: 'Categories',
-            subtitle: 'View defaults and add custom categories.',
-            onTap: () => Navigator.of(context).pushNamed(AppRoutes.categories),
-          ),
-          const SizedBox(height: AppSpacing.md),
-          SettingsNavigationCard(
-            icon: Icons.savings_rounded,
-            title: 'Category Budgets',
-            subtitle: 'Set limits for each spending category.',
-            iconBackground: AppColors.warningSurface,
-            iconColor: AppColors.warning,
-            onTap: () =>
-                Navigator.of(context).pushNamed(AppRoutes.categoryBudgets),
-          ),
-          const SizedBox(height: AppSpacing.md),
-          SettingsSection(
-            children: [
-              SettingsRow(
-                icon: Icons.currency_rupee_rounded,
-                title: 'Currency',
-                value: appState.currency.label,
-                onTap: () => _showOptionSheet<CurrencyPreference>(
-                  context: context,
-                  title: 'Currency',
-                  selectedValue: appState.currency,
-                  options: CurrencyPreference.values
-                      .map(
-                        (currency) => SettingsOption(
-                          value: currency,
-                          label: currency.label,
-                        ),
-                      )
-                      .toList(growable: false),
-                  onSelected: context.read<AppStateProvider>().setCurrency,
-                ),
-              ),
-              const SettingsDivider(),
-              SettingsRow(
-                icon: Icons.calendar_month_rounded,
-                title: 'Week starts on',
-                value: appState.weekStart.label,
-                onTap: () => _showOptionSheet<WeekStartPreference>(
-                  context: context,
-                  title: 'Week starts on',
-                  selectedValue: appState.weekStart,
-                  options: WeekStartPreference.values
-                      .map(
-                        (weekStart) => SettingsOption(
-                          value: weekStart,
-                          label: weekStart.label,
-                        ),
-                      )
-                      .toList(growable: false),
-                  onSelected: context.read<AppStateProvider>().setWeekStart,
-                ),
-              ),
-              const SettingsDivider(),
-              SettingsRow(
-                icon: Icons.dark_mode_rounded,
-                title: 'Dark mode',
-                trailing: MintSwitch(
-                  value: appState.isDarkModeActive(platformBrightness),
-                  onChanged: (value) {
-                    context.read<AppStateProvider>().setThemeMode(
-                      value ? ThemeMode.dark : ThemeMode.light,
-                    );
-                  },
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: AppSpacing.md),
-          SettingsSection(
-            children: [
-              SettingsRow(
-                icon: Icons.notifications_rounded,
-                title: 'Budget alerts',
-                iconBackground: AppColors.warningSurface,
-                iconColor: AppColors.warning,
-                onTap: () =>
-                    Navigator.of(context).pushNamed(AppRoutes.notifications),
-                trailing: MintSwitch(
-                  value: appState.budgetAlertsEnabled,
-                  onChanged: context
-                      .read<AppStateProvider>()
-                      .setBudgetAlertsEnabled,
-                ),
-              ),
-              const SettingsDivider(),
-              SettingsRow(
-                icon: Icons.download_rounded,
-                title: 'Export data',
-                value: 'CSV',
-                onTap: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Open Insights to export monthly CSV.'),
-                    ),
-                  );
-                },
-              ),
-            ],
-          ),
-          const SizedBox(height: AppSpacing.md),
-          DangerAction(
-            label: authProvider.isLoading ? 'Signing out...' : 'Sign out',
-            onPressed: authProvider.isLoading
-                ? null
-                : () => _confirmSignOut(context),
-          ),
-          const SizedBox(height: AppSpacing.sm),
-          DangerAction(
-            label: 'Delete account',
-            onPressed: authProvider.isLoading
-                ? null
-                : () => _confirmDeleteAccount(context),
-          ),
-        ],
-      ),
     );
   }
 

@@ -30,7 +30,7 @@ class HomeHeader extends StatelessWidget {
             children: [
               Text(greeting, style: Theme.of(context).textTheme.bodySmall),
               Text(
-                'Good evening',
+                'Every Rupee Counts',
                 style: Theme.of(context).textTheme.titleLarge,
               ),
             ],
